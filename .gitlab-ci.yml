@@ -11,4 +11,5 @@ build_image:
   script:
     - echo 'Building image...'
     - env | grep "CI_"
+    - /busybox/sh ./kanikobuild.sh
     - echo "Done!"
