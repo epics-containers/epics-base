@@ -1,0 +1,14 @@
+
+stages:
+  - build
+build_image:
+  stage: build
+  tags:
+    - docker-image
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - echo 'Building image...'
+    - env | grep "CI_"
+    - echo "Done!"
