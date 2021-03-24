@@ -4,7 +4,7 @@
 # this script is designed for projects below the group controls/containers
 
 echo 'Building image...'
-read GROUP CONTAINERS PROJECT <<<$(IFS="/"; echo $CI_PROJECT_NAMESPACE)
+GROUP=`echo ${CI_PROJECT_NAMESPACE} | cut -f 1 -d "/"`
 
 if [ -z "${CI_COMMIT_TAG}" ]
 then
