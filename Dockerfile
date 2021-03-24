@@ -15,7 +15,8 @@ ENV EPICS_HOST_ARCH=linux-x86_64
 ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
 
 # install build tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
     curl \
