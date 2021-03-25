@@ -7,6 +7,7 @@
 #     $PROJECT_PATH in the prod registry for tagged commits
 # requires that CI_WORK_REGISTRY and CI_PROD_REGISTRY are set appropriately
 #     in Settings->CI->Variables in your gitlab group <group name>/containers
+# PROJECT_PATH is PROJECT_NAMESPACE with <group name>/containers removed 
 
 echo 'Building image...'
 GROUP=${CI_PROJECT_NAMESPACE%%/containers*}
