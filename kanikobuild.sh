@@ -8,6 +8,8 @@
 # requires that CI_WORK_REGISTRY and CI_PROD_REGISTRY are set to a root path
 # in your image registry for each of work and production images.
 # See Settings->CI->Variables in the gitlab group <group name>/containers
+#
+# PROJECT_PATH is PROJECT_NAMESPACE with <group name>/containers removed
 
 echo 'Building image...'
 GROUP=${CI_PROJECT_NAMESPACE%%/containers*}
