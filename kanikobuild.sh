@@ -4,7 +4,7 @@
 # this script is designed for projects below the namespace <group name>/containers
 # and deploys images to:
 #     $CI_REGISTRY/$GROUP/work/$PROJECT_PATH for untagged commits
-#     $CI_REGISTRY/$GROUP/work/$PROJECT_PATH for tagged commits
+#     $CI_REGISTRY/$GROUP/prod/$PROJECT_PATH for tagged commits
 # where PROJECT_PATH is the namespace minus <group name>/containers
 
 echo 'Building image...'
