@@ -3,9 +3,10 @@
 
 # this script is designed for projects below the namespace <group name>/containers
 # and deploys images to:
-#     $CI_REGISTRY/$GROUP/work/$PROJECT_PATH for untagged commits
-#     $CI_REGISTRY/$GROUP/prod/$PROJECT_PATH for tagged commits
-# where PROJECT_PATH is the namespace minus <group name>/containers
+#     $PROJECT_PATH in the work registry for untagged commits
+#     $PROJECT_PATH in the prod registry for tagged commits
+# requires that CI_WORK_REGISTRY and CI_PROD_REGISTRY are set appropriately
+#     in Settings->CI->Variables in your gitlab group <group name>/containers
 
 echo 'Building image...'
 GROUP=${CI_PROJECT_NAMESPACE%%/containers*}
@@ -13,10 +14,10 @@ PROJECT_PATH=${CI_PROJECT_NAMESPACE##*containers/}
 
 if [ -z "${CI_COMMIT_TAG}" ]
 then
-  DESTINATION=$CI_REGISTRY/$GROUP/work/$PROJECT_PATH
+  DESTINATION=$CI_WORK_REGISTRY/$PROJECT_PATH/$CI_PROJECT_NAME
   CI_COMMIT_TAG=$CI_COMMIT_REF_NAME
 else
-  DESTINATION=$CI_REGISTRY/$GROUP/prod/$PROJECT_PATH
+  DESTINATION=$CI_PROD_REGISTRY/$PROJECT_PATH/$CI_PROJECT_NAME
 fi
 
 CMD="/kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile"
