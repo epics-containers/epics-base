@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 # 20.04 latest LTS: Canonical will support it with updates until April 2025
 # with extended security updates until April 2030
 
-ARG EPICS_VERSION=R7.0.5
+ARG EPICS_VERSION=R7.0.5b1.1
 
 # install build tools
 RUN apt-get update && apt-get upgrade -y && \
@@ -33,7 +33,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 USER ${USERNAME}
 WORKDIR ${EPICS_ROOT}
 
-RUN git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git && \
+RUN git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git
 
 # build
 RUN make -j -C ${EPICS_BASE} && \
