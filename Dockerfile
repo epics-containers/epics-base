@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 # 20.04 latest LTS: Canonical will support it with updates until April 2025
 # with extended security updates until April 2030
 
-ARG EPICS_VERSION=R7.0.5b1.1
+ARG EPICS_VERSION=R7.0.5
 
 # install build tools
 RUN apt-get update && apt-get upgrade -y && \
