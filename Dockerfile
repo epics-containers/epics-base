@@ -22,9 +22,9 @@ ENV EPICS_HOST_ARCH=linux-x86_64
 ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
 
 # create user and group
-ENV USERNAME=epicsuser
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
+ENV USERNAME=k8s-epics-iocs
+ENV USER_UID=37630
+ENV USER_GID=37795
 
 RUN groupadd --gid ${USER_GID} ${USERNAME} && \
     useradd --uid ${USER_UID} --gid ${USER_GID} -s /bin/bash -m ${USERNAME} && \
