@@ -13,15 +13,16 @@ RUN apt-get update && apt-get upgrade -y && \
     g++ \
     git \
     libextutils-makemaker-cpanfile-perl \
-    make
+    make \
+    && rm -rf /var/lib/apt/lists/*
 
 # environment
-ENV EPICS_ROOT=/${EPICS_VERSION}
+ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV EPICS_HOST_ARCH=linux-x86_64
 ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
 
-# create user and group
+# create a user and group to run the iocs under
 ENV USERNAME=k8s-epics-iocs
 ENV USER_UID=37630
 ENV USER_GID=37795
