@@ -1,0 +1,19 @@
+name:  Build and publish image to ghcr.io/epics-containers
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Publish Image
+        uses: matootie/github-docker@v3.1.0
+        with:
+          accessToken: ${{ github.token }}
+
+# TODO - we require some basic system tests to check CA works in the image etc.

@@ -5,6 +5,9 @@ FROM ubuntu:20.04
 
 ARG EPICS_VERSION=R7.0.5
 
+# tell github packages that the image belongs to this repo
+LABEL org.opencontainers.image.source https://github.com/epics-containers/epics-base
+
 # install build tools
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
@@ -34,6 +37,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 USER ${USERNAME}
 WORKDIR ${EPICS_ROOT}
 
+# get the epics-base source including the PVA submodules
 RUN git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git
 
 # build
