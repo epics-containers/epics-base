@@ -2,18 +2,36 @@ name:  Build and publish image to ghcr.io/epics-containers
 
 on:
   push:
-    branches: ['main']
   pull_request:
-    branches: ['main']
 
 jobs:
-  build:
+  build-and-push-image:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Publish Image
-        uses: matootie/github-docker@v3.1.0
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Branch name and tag
+        # determine the tag to apply to the new container image
+        id: tag
+        run: |
+          if [[ ${GITHUB_REF} = refs/tags/* ]] ; then
+            echo ::set-output name=image_tag::${GITHUB_REF#refs/tags/}
+          else
+            echo ::set-output name=image_tag::"WORK"
+          fi
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v1
         with:
-          accessToken: ${{ github.token }}
+          registry: ghcr.io/epics-containers
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build container image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.image_tag }}
 
-# TODO - we require some basic system tests to check CA works in the image etc.
