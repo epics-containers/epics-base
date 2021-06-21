@@ -24,12 +24,24 @@ jobs:
             echo ::set-output name=do_push::false
           fi
 
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v1
         with:
           registry: ghcr.io/epics-containers
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
 
       - name: Build container image
         uses: docker/build-push-action@v2
@@ -38,3 +50,6 @@ jobs:
           push: ${{ steps.tag.outputs.do_push }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.image_tag }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
