@@ -5,17 +5,13 @@ FROM ubuntu:20.04
 
 ARG EPICS_VERSION=R7.0.5
 
-# tell github packages that the image belongs to this repo
-LABEL org.opencontainers.image.source https://github.com/epics-containers/epics-base
-
 # install build tools
-RUN apt-get update && apt-get upgrade -y && \
+RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    bash \
     ca-certificates \
     g++ \
     git \
-    libextutils-makemaker-cpanfile-perl \
+    libevent-dev \
     make \
     && rm -rf /var/lib/apt/lists/*
 
@@ -37,9 +33,17 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 USER ${USERNAME}
 WORKDIR ${EPICS_ROOT}
 
-# get the epics-base source including the PVA submodules
+# get the epics-base source including PVA submodules
 RUN git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git
 
 # build
 RUN make -j -C ${EPICS_BASE} && \
     make clean -j -C ${EPICS_BASE}
+
+# add PVA support (TODO this saves space but ADCORE needs PVA at present)
+# ENV PVXS_VERSION=0.1.5
+# RUN git clone --depth 1 -b ${PVXS_VERSION} https://github.com/mdavidsaver/pvxs.git && \
+#     echo 'EPICS_BASE=$(TOP)/../epics-base' >> pvxs/configure/RELEASE.local && \
+#     make -j -C pvxs && \
+#     make -j clean -C pvxs
+
