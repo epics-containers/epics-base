@@ -5,14 +5,13 @@ FROM ubuntu:20.04
 
 ARG EPICS_VERSION=R7.0.5
 
-# install build tools
+# install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
-    g++ \
+    build-essential \
+    busybox-static \
     git \
-    libevent-dev \
-    make \
     && rm -rf /var/lib/apt/lists/*
 
 # environment
@@ -33,17 +32,12 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
 USER ${USERNAME}
 WORKDIR ${EPICS_ROOT}
 
-# get the epics-base source including PVA submodules
-RUN git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git
+# get the epics-base source including PVA submodules - minimizing image size
+RUN git config --global advice.detachedHead false && \
+    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git && \
+    rm -fr ${EPICS_BASE}/.git && \
+    sed -i 's/\(^OPT.*\)-g/\1-g0/' ${EPICS_BASE}/configure/os/CONFIG_SITE.linux-x86_64.linux-x86_64
 
 # build
 RUN make -j -C ${EPICS_BASE} && \
     make clean -j -C ${EPICS_BASE}
-
-# add PVA support (TODO this saves space but ADCORE needs PVA at present)
-# ENV PVXS_VERSION=0.1.5
-# RUN git clone --depth 1 -b ${PVXS_VERSION} https://github.com/mdavidsaver/pvxs.git && \
-#     echo 'EPICS_BASE=$(TOP)/../epics-base' >> pvxs/configure/RELEASE.local && \
-#     make -j -C pvxs && \
-#     make -j clean -C pvxs
-
