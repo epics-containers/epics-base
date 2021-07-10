@@ -60,4 +60,4 @@ FROM environment AS runtime
 USER ${USERNAME}
 
 # get the products from the builder phase
-COPY --from=build ${EPICS_ROOT} ${EPICS_ROOT}
+COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
