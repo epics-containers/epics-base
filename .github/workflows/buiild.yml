@@ -16,13 +16,9 @@ jobs:
       - name: Determine container image tag to use
         id: tag
         run: |
-          if [[ ${GITHUB_REF} = refs/tags/* ]] ; then
-            echo ::set-output name=image_tag::${GITHUB_REF#refs/tags/}
-            echo ::set-output name=do_push::true
-          else
-            echo ::set-output name=image_tag::"NONE"
-            echo ::set-output name=do_push::false
-          fi
+          # tag is branch name or tag if there is a tag
+          echo ::set-output name=image_tag::${GITHUB_REF##*/}
+          echo ::set-output name=do_push::true
 
       - name: Cache Docker layers
         uses: actions/cache@v2
