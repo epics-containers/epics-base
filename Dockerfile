@@ -1,10 +1,8 @@
 # EPICS 7 Base Dockerfile
 
-ARG base=ubuntu:20.04
-
 ##### shared environment stage #################################################
 
-FROM ${base} AS environment
+FROM ubuntu:20.04 AS environment
 # 20.04 latest LTS: Canonical will support it with updates until April 2025
 # with extended security updates until April 2030
 
@@ -59,5 +57,5 @@ FROM environment AS runtime
 
 USER ${USERNAME}
 
-# get the products from the builder phase
+# get the products from the build stage
 COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
