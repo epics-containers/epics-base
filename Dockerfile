@@ -9,6 +9,8 @@ FROM ubuntu:20.04 AS environment
 # environment
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
+ENV SUPPORT ${EPICS_ROOT}/support
+ENV IOC ${EPICS_ROOT}/ioc
 ENV EPICS_HOST_ARCH=linux-x86_64
 ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/linux-x86_64
