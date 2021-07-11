@@ -60,4 +60,4 @@ FROM environment AS runtime
 USER ${USERNAME}
 
 # get the products from the build stage
-COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
+COPY --from=developer --chown=${USER_UID}:${USER_GID} ${EPICS_ROOT} ${EPICS_ROOT}
