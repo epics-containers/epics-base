@@ -46,12 +46,12 @@ USER ${USERNAME}
 # get the epics-base source including PVA submodules - minimizing image size
 RUN git config --global advice.detachedHead false && \
     git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git && \
-    rm -fr .git && \
-    sed -i 's/\(^OPT.*\)-g/\1-g0/' epics-base/configure/os/CONFIG_SITE.linux-x86_64.linux-x86_64
+    rm -fr ${EPICS_BASE}/.git && \
+    sed -i 's/\(^OPT.*\)-g/\1-g0/' ${EPICS_BASE}/configure/os/CONFIG_SITE.linux-x86_64.linux-x86_64
 
 # build
-RUN make -j -C epics-base && \
-    make clean -j -C epics-base
+RUN make -j -C ${EPICS_BASE} && \
+    make clean -j -C ${EPICS_BASE}
 
 ##### runtime stage ############################################################
 
