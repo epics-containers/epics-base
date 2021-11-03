@@ -30,7 +30,7 @@ WORKDIR ${EPICS_ROOT}
 
 FROM environment AS developer
 
-ARG EPICS_VERSION=R7.0.5
+ARG EPICS_VERSION=R7.0.6.1
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
