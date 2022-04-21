@@ -30,6 +30,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     build-essential \
     busybox-static \
     git \
+    rsync \
     ssh-client \
     && rm -rf /var/lib/apt/lists/*
 
