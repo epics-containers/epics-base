@@ -3,8 +3,6 @@
 ##### shared environment stage #################################################
 
 FROM ubuntu:22.04 AS environment
-# 20.04 latest LTS: Canonical will support it with updates until April 2025
-# with extended security updates until April 2030
 
 # environment
 ENV EPICS_ROOT=/repos/epics
