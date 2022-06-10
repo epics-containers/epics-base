@@ -10,10 +10,17 @@ ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV EPICS_HOST_ARCH=linux-x86_64
-ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
+ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:/root/.local/bin:${PATH}"
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/linux-x86_64
 
 WORKDIR ${EPICS_ROOT}
+
+# global installs for developer and runtime
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    python3.10-minimal \
+    && ln -s /usr/bin/python3.10 /usr/bin/python3 \
+    && rm -rf /var/lib/apt/lists/*
 
 ##### build stage ##############################################################
 
@@ -26,8 +33,9 @@ RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
-    busybox-static \
+    busybox \
     git \
+    python3-pip \
     rsync \
     ssh-client \
     && rm -rf /var/lib/apt/lists/*
@@ -41,9 +49,15 @@ RUN git config --global advice.detachedHead false && \
 RUN make -j -C ${EPICS_BASE} && \
     make clean -j -C ${EPICS_BASE}
 
+# resources for all support modules
+COPY support ${SUPPORT}/
+RUN pip install --user -r ${SUPPORT}/requirements.txt
+
 ##### runtime stage ############################################################
 
 FROM environment AS runtime
 
 # get the products from the build stage
 COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
+# copy python user packages
+COPY --from=developer /root/.local /root/.local

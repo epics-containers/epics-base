@@ -1,0 +1,9 @@
+TOPTARGETS := all clean
+
+include configure/MODULES
+
+$(TOPTARGETS): $(MODULES)
+$(MODULES):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+.PHONY: $(TOPTARGETS) $(MODULES)
