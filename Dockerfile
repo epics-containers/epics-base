@@ -18,8 +18,8 @@ WORKDIR ${EPICS_ROOT}
 # global installs for developer and runtime
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    python3.10-minimal \
-    && ln -s /usr/bin/python3.10 /usr/bin/python3 \
+    libpython3-stdlib \
+    python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
 ##### build stage ##############################################################
