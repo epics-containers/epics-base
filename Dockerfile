@@ -9,8 +9,10 @@ ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
+ENV PYTHON_PKG ${EPICS_ROOT}/python
+ENV PYTHONPATH=${PYTHON_PKG}/local/lib/python3.10/dist-packages/
 ENV EPICS_HOST_ARCH=linux-x86_64
-ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:/root/.local/bin:${PATH}"
+ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PYTHON_PKG}/local/bin:${PATH}"
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/linux-x86_64
 
 WORKDIR ${EPICS_ROOT}
@@ -50,8 +52,8 @@ RUN make -j -C ${EPICS_BASE} && \
     make clean -j -C ${EPICS_BASE}
 
 # resources for all support modules
-COPY support ${SUPPORT}/
-RUN pip install --user -r ${SUPPORT}/requirements.txt
+COPY support ${SUPPORT}/ 
+RUN pip install --prefix=${PYTHON_PKG} -r ${SUPPORT}/requirements.txt
 
 ##### runtime stage ############################################################
 
@@ -59,5 +61,3 @@ FROM environment AS runtime
 
 # get the products from the build stage
 COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
-# copy python user packages
-COPY --from=developer /root/.local /root/.local
