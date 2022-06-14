@@ -1,4 +1,4 @@
-name:  Build and publish image to ghcr.io/epics-containers
+name: Build and publish image to ghcr.io/epics-containers
 
 on:
   push:
@@ -56,8 +56,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           push: ${{ steps.tag.outputs.do_push }}
           tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.image_tag }}.run
+            ghcr.io/${{ github.repository }}-run:${{ steps.tag.outputs.image_tag }}
           target: runtime
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-
