@@ -1,0 +1,41 @@
+# EPICS 7 Base Dockerfile
+
+
+# Why is this not working like this page:
+# https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
+# with:
+# podman buildx build --platform=rtems/powerpc/runtime,linux/amd64/runtime -t test --no-cache --file Dockertest .
+
+##### shared environment stage #################################################
+
+FROM ubuntu/amd64:22.04 AS environment
+
+ARG TARGETPLATFORM
+RUN echo "TARGET=${TARGETPLATFORM}"
+
+# environment
+ENV EPICS_ROOT=/repos/epics
+ENV EPICS_BASE=${EPICS_ROOT}/epics-base
+
+WORKDIR ${EPICS_ROOT}
+
+
+##### build stage ##############################################################
+
+FROM environment AS developer
+
+ARG EPICS_VERSION=R7.0.6.1
+
+ARG TARGETARCH TARGETPLATFORM TARGETVARIANT TARGETOS
+ARG BUILDARCH BUILDPLATFORM BUILDVARIANT BUILDOS
+
+RUN echo "------- $TARGETPLATFORM $TARGETARCH $TARGETVARIANT ----------"
+RUN echo "------- $BUILDPLATFORM $BUILDARCH $BUILDVARIANT ----------"
+
+
+##### runtime stage ############################################################
+
+FROM environment AS runtime
+
+# get the products from the build stage
+COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
