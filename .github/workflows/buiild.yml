@@ -5,21 +5,18 @@ on:
   pull_request:
 
 jobs:
-  build-and-push-image:
+  build-push-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Determine container image tag to use
-        id: tag
-        run: |
-          # tag is branch name or tag if there is a tag
-          echo ::set-output name=image_tag::${GITHUB_REF##*/}
-          echo ::set-output name=do_push::true
+    strategy:
+      fail-fast: true
+      matrix:
+        target: ["runtime", "developer"]
+        architecture: ["rtems", "linux"]
 
+    steps:
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
@@ -29,34 +26,33 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Log in to GitHub Docker Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
-          registry: ghcr.io/epics-containers
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-${{ matrix.architecture }}-${{ matrix.target }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
 
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build developer image
-        uses: docker/build-push-action@v2
-        with:
-          builder: ${{ steps.buildx.outputs.name }}
-          push: ${{ steps.tag.outputs.do_push }}
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.image_tag }}
-          target: developer
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
-
       - name: Build runtime image
         uses: docker/build-push-action@v2
         with:
-          builder: ${{ steps.buildx.outputs.name }}
-          push: ${{ steps.tag.outputs.do_push }}
-          tags: |
-            ghcr.io/${{ github.repository }}-run:${{ steps.tag.outputs.image_tag }}
-          target: runtime
+          push: ${{ github.event_name != 'pull_request' }}
+          build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

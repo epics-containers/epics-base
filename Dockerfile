@@ -1,6 +1,7 @@
 # EPICS 7 Base Dockerfile
 
 ##### shared environment stage #################################################
+ARG TARGET_ARCHITECTURE=linux
 
 FROM ubuntu:22.04 AS environment
 
@@ -24,9 +25,17 @@ RUN apt-get update && apt-get upgrade -y && \
     python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
+FROM environment AS environment-linux
+
+RUN echo "TODO: Unique Linux setup goes here"
+
+FROM environment AS environment-rtems
+
+RUN echo "TODO: Unique RTEMS setup goes here"
+
 ##### build stage ##############################################################
 
-FROM environment AS developer
+FROM environment-${TARGET_ARCHITECTURE} AS developer
 
 ARG EPICS_VERSION=R7.0.6.1
 

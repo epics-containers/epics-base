@@ -1,6 +1,6 @@
 ##### shared environment stage #################################################
 
-FROM --platform=amd64 ubuntu:22.04 AS environment
+FROM --platform=${BUILDPLATFORM} ubuntu:22.04 AS environment
 
 ARG TARGETPLATFORM BUILDPLATFORM
 
@@ -23,10 +23,20 @@ ARG TARGETARCH TARGETPLATFORM TARGETVARIANT TARGETOS BUILDARCH BUILDPLATFORM BUI
 RUN echo "--- $TARGETPLATFORM $TARGETARCH $TARGETVARIANT $TARGETOS" | tee target.txt
 RUN echo "--- $BUILDPLATFORM $BUILDARCH $BUILDVARIANT $BUILDOS " | tee build.txt
 
+ENV TARGET=developer
+ENV TARGETPLATFORM=${TARGETPLATFORM}
+
+CMD echo I am the ${TARGET} target for ${TARGETPLATFORM}
 
 ##### runtime stage ############################################################
 
 FROM environment AS runtime
 
+ARG TARGETARCH TARGETPLATFORM
+ENV TARGET=runtime
+ENV TARGETPLATFORM=${TARGETPLATFORM}
+
 # get the products from the build stage
 COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
+
+CMD echo I am the ${TARGET} target for ${TARGETPLATFORM}
