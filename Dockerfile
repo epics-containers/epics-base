@@ -23,6 +23,8 @@ WORKDIR ${EPICS_ROOT}
 
 # global installs for developer and runtime
 RUN apt-get update && apt-get upgrade -y && \
+    export TERM=linux && \
+    export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     libpython3-stdlib \
     python3-minimal \

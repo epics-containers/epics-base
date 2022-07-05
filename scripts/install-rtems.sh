@@ -8,9 +8,13 @@ apt-get update -y && apt-get upgrade -y && \
     diffutils \
     flex \
     pax \
+    python2 \
+    python2-dev \
     texinfo \
     unzip \
     && rm -rf /var/lib/apt/lists/*
+
+ln -s /usr/bin/python2  /usr/bin/python
 
 RTEMS_MAJOR_VERSION=5
 RTEMS_MINOR_VERSION=1
