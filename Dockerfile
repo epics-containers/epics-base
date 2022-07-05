@@ -6,6 +6,9 @@ ARG TARGET_ARCHITECTURE=linux
 FROM ubuntu:22.04 AS environment
 
 # environment
+ENV EPICS_VERSION=R7.0.6.1
+ARG TARGET_ARCHITECTURE
+ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
@@ -25,19 +28,10 @@ RUN apt-get update && apt-get upgrade -y && \
     python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
-FROM environment AS environment-linux
 
-RUN echo "TODO: Unique Linux setup goes here"
+##### setup shared developer tools stage #######################################
 
-FROM environment AS environment-rtems
-
-RUN echo "TODO: Unique RTEMS setup goes here"
-
-##### build stage ##############################################################
-
-FROM environment-${TARGET_ARCHITECTURE} AS developer
-
-ARG EPICS_VERSION=R7.0.6.1
+FROM environment AS devtools
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
@@ -47,22 +41,57 @@ RUN apt-get update -y && apt-get upgrade -y && \
     busybox \
     git \
     python3-pip \
+    python3-dev \
     rsync \
     ssh-client \
     && rm -rf /var/lib/apt/lists/*
 
-# get the epics-base source including PVA submodules - minimizing image size
+
+##### unique developer setup for linux soft iocs ###############################
+
+FROM devtools AS developer-linux
+
+COPY scripts/patch-linux.sh patch-base.sh
+
+
+##### unique developer setup for rtems iocs ####################################
+
+FROM devtools AS developer-rtems
+
+ENV RTEMS_TOP=/rtems
+RUN mkdir -p ${RTEMS_TOP}
+
+# pull and build the rtems cross compiler and dependencies
+COPY scripts/install-rtems.sh ${RTEMS_TOP}
+RUN cd ${RTEMS_TOP} && if [ "${TARGET_ARCHITECTURE}" = "rtems" ] ; then \
+    bash install-rtems.sh ; fi
+
+# copy patch files for rtems
+COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
+COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
+
+
+##### shared build stage #######################################################
+
+FROM developer-${TARGET_ARCHITECTURE} AS developer
+
+# get the epics-base source including PVA submodules
+# sed command minimizes image size by removing symbols (for review)
 RUN git config --global advice.detachedHead false && \
-    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git && \
-    sed -i 's/\(^OPT.*\)-g/\1-g0/' ${EPICS_BASE}/configure/os/CONFIG_SITE.linux-x86_64.linux-x86_64
+    git clone --recursive --depth 1 -b ${EPICS_VERSION} \
+    https://github.com/epics-base/epics-base.git && \
+    sed -i 's/\(^OPT.*\)-g/\1-g0/' \
+    ${EPICS_BASE}/configure/os/CONFIG_SITE.linux-x86_64.linux-x86_64
 
 # build
-RUN make -j -C ${EPICS_BASE} && \
-    make clean -j -C ${EPICS_BASE}
+RUN bash patch-base.sh && \
+    make -j $(nproc) -C ${EPICS_BASE} && \
+    make clean -j $(nproc) -C ${EPICS_BASE}
 
 # resources for all support modules
 COPY support ${SUPPORT}/ 
 RUN pip install --prefix=${PYTHON_PKG} -r ${SUPPORT}/requirements.txt
+
 
 ##### runtime stage ############################################################
 
