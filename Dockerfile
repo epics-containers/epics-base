@@ -64,7 +64,7 @@ RUN mkdir -p ${RTEMS_TOP}
 # pull and build the rtems cross compiler and dependencies
 COPY scripts/install-rtems.sh ${RTEMS_TOP}
 RUN cd ${RTEMS_TOP} && if [ "${TARGET_ARCHITECTURE}" = "rtems" ] ; then \
-    bash install-rtems.sh ; fi
+    ./install-rtems.sh ; fi
 
 # copy patch files for rtems
 COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
