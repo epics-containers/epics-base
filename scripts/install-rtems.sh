@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+set -ex
 
 apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
