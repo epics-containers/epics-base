@@ -3,22 +3,22 @@
 set -ex
 
 apt-get update -y && apt-get upgrade -y && \
+    export TERM=linux && \
+    export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
     bison \
     diffutils \
     flex \
     pax \
-    python2 \
-    python2-dev \
+    python \
+    python-dev \
     texinfo \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-ln -s /usr/bin/python2  /usr/bin/python
-
 RTEMS_MAJOR_VERSION=5
 RTEMS_MINOR_VERSION=1
-RTEMS_TOP="${1:-/rtems}"
+RTEMS_TOP=/rtems
 RTEMS_BSP="beatnik"
 RTEMS_SRC=rtems-${RTEMS_MAJOR_VERSION}.${RTEMS_MINOR_VERSION}
 cd ${RTEMS_TOP}
