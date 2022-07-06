@@ -37,20 +37,15 @@ RUN apt-get update -y && apt-get upgrade -y && \
 
 FROM devtools AS developer-linux
 
-COPY scripts/patch-linux.sh patch-base.sh
-
 
 ##### unique developer setup for rtems iocs ####################################
 
 FROM devtools AS developer-rtems
 
 ENV RTEMS_TOP=/rtems
-RUN mkdir -p ${RTEMS_TOP}
 
-# pull and build the rtems cross compiler and dependencies
-COPY scripts/install-rtems.sh ${RTEMS_TOP}
-RUN cd ${RTEMS_TOP} && if [ "${TARGET_ARCHITECTURE}" = "rtems" ] ; then \
-    ./install-rtems.sh ; fi
+# pull in RTEMS toolchain, kernel
+COPY --from=ghcr.io/epics-containers/rtems-tools ${RTEMS_TOP} ${RTEMS_TOP}
 
 # copy patch files for rtems
 COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
