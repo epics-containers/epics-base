@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 RTEMS_KERNEL=${RTEMS_TOP}/rtems
-RTEMS_TOOLCHAIN=${RTEMS_TOP}/rtems/toolchain
+RTEMS_TOOLCHAIN=${RTEMS_TOP}/toolchain
 
 cd ${EPICS_ROOT}/epics-base
 patch -p1 < ${EPICS_ROOT}/rtems-epics-base.patch
