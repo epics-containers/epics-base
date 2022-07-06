@@ -5,7 +5,6 @@ ARG TARGET_ARCHITECTURE=linux
 
 FROM ubuntu:22.04 AS environment
 
-# environment
 ENV EPICS_VERSION=R7.0.6.1
 ARG TARGET_ARCHITECTURE
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
@@ -16,16 +15,6 @@ ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 WORKDIR ${EPICS_ROOT}
-
-# global installs for developer and runtime
-RUN apt-get update && apt-get upgrade -y && \
-    export TERM=linux && \
-    export DEBIAN_FRONTEND=noninteractive && \
-    apt-get install -y --no-install-recommends \
-    libpython3-stdlib \
-    python3-minimal \
-    && rm -rf /var/lib/apt/lists/*
-
 
 ##### setup shared developer tools stage #######################################
 
