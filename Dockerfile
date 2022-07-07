@@ -12,7 +12,7 @@ ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV EPICS_HOST_ARCH=linux-x86_64
-ENV PATH="${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}"
+ENV PATH=${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 WORKDIR ${EPICS_ROOT}
@@ -27,6 +27,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     ca-certificates \
     build-essential \
     busybox \
+    diffutils \
     git \
     rsync \
     ssh-client \
@@ -37,6 +38,8 @@ RUN apt-get update -y && apt-get upgrade -y && \
 
 FROM devtools AS developer-linux
 
+COPY scripts/patch-linux.sh ${EPICS_ROOT}/patch-base.sh
+
 
 ##### unique developer setup for rtems iocs ####################################
 
@@ -45,7 +48,7 @@ FROM devtools AS developer-rtems
 ENV RTEMS_TOP=/rtems
 
 # pull in RTEMS toolchain, kernel
-COPY --from=ghcr.io/epics-containers/rtems-tools ${RTEMS_TOP} ${RTEMS_TOP}
+COPY --from=ghcr.io/epics-containers/rtems-powerpc ${RTEMS_TOP} ${RTEMS_TOP}
 
 # copy patch files for rtems
 COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
@@ -59,19 +62,25 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 # get the epics-base source including PVA submodules
 # sed command minimizes image size by removing symbols (for review)
 RUN git config --global advice.detachedHead false && \
-    git clone --recursive --depth 1 -b ${EPICS_VERSION} \
-    https://github.com/epics-base/epics-base.git && \
-    sed -i 's/\(^OPT.*\)-g/\1-g0/' \
-    ${EPICS_BASE}/configure/os/CONFIG_SITE.linux-x86_64.linux-x86_64
+    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git 
 
 # build
 RUN bash patch-base.sh && \
     make -j $(nproc) -C ${EPICS_BASE} && \
     make clean -j $(nproc) -C ${EPICS_BASE}
 
+
+##### runtime preparation stage ################################################
+
+FROM developer AS runtime_prep
+
+# get the products from the build stage 
+COPY scripts/minimize.sh ${EPICS_ROOT}
+RUN bash ${EPICS_ROOT}/minimize.sh
+
+
 ##### runtime stage ############################################################
+FROM environment as runtime
 
-FROM environment AS runtime
+COPY --from=runtime_prep /MIN_ROOT/ ${EPICS_ROOT}
 
-# get the products from the build stage
-COPY --from=developer ${EPICS_ROOT} ${EPICS_ROOT}
