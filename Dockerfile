@@ -8,14 +8,22 @@ FROM ubuntu:22.04 AS environment
 
 ENV EPICS_VERSION=R7.0.6.1
 ARG TARGET_ARCHITECTURE
+# EPICS BASE Envrionment
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV EPICS_HOST_ARCH=linux-x86_64
 ENV PATH=${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
+# IOC Environment
+ENV PYTHON_PKG ${EPICS_ROOT}/python
+ENV PYTHONPATH=${PYTHON_PKG}/local/lib/python3.10/dist-packages/ 
+ENV PATH=${PYTHON_PKG}/local/bin:${PATH}
+ENV SUPPORT ${EPICS_ROOT}/support
+ENV IOC ${EPICS_ROOT}/ioc
 
 WORKDIR ${EPICS_ROOT}
+
 
 ##### setup shared developer tools stage #######################################
 
