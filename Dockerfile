@@ -47,7 +47,7 @@ FROM devtools AS developer-rtems
 
 ENV RTEMS_TOP=/rtems
 
-# pull in RTEMS toolchain, kernel
+# pull in RTEMS toolchain
 COPY --from=ghcr.io/epics-containers/rtems-powerpc ${RTEMS_TOP} ${RTEMS_TOP}
 
 # copy patch files for rtems
@@ -80,7 +80,8 @@ RUN bash ${EPICS_ROOT}/minimize.sh
 
 
 ##### runtime stage ############################################################
+
 FROM environment as runtime
 
-COPY --from=runtime_prep /MIN_ROOT/ ${EPICS_ROOT}
+COPY --from=runtime_prep /MIN_ROOT/* ${EPICS_BASE}
 
