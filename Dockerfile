@@ -4,7 +4,7 @@
 ARG TARGET_ARCHITECTURE=linux
 
 # RTEMS build imcompatible with python2 from ubuntu:22.04
-FROM ubuntu:20.04 AS environment
+FROM ubuntu:22.04 AS environment
 
 ENV EPICS_VERSION=R7.0.6.1
 ARG TARGET_ARCHITECTURE
