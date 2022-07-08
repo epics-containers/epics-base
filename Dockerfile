@@ -77,14 +77,14 @@ RUN bash patch-base.sh && \
     make -j $(nproc) -C ${EPICS_BASE} && \
     make clean -j $(nproc) -C ${EPICS_BASE}
 
+COPY scripts/minimize.sh ${EPICS_ROOT}
 
 ##### runtime preparation stage ################################################
 
 FROM developer AS runtime_prep
 
-# get the products from the build stage 
-COPY scripts/minimize.sh ${EPICS_ROOT}
-RUN bash ${EPICS_ROOT}/minimize.sh
+# get the products from the build stage and reduce to runtime assets only 
+RUN bash ${EPICS_ROOT}/minimize.sh ${EPICS_ROOT} /MIN_ROOT
 
 
 ##### runtime stage ############################################################
