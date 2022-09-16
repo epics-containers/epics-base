@@ -59,18 +59,14 @@ COPY scripts/patch-linux.sh ${EPICS_ROOT}/patch-base.sh
 
 ##### unique developer setup for rtems iocs ####################################
 
-#### TODO TODO TODO restore this - disabled for speed of testing IOC build #####
+FROM devtools AS developer-rtems
 
-# FROM devtools AS developer-rtems
+ENV RTEMS_TOP=/rtems
 
-# ENV RTEMS_TOP=/rtems
-
-# # pull in RTEMS toolchain
-# COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
-
-# # copy patch files for rtems
-# COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
-# COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
+# pull in RTEMS toolchain and patch files
+COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
+COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
 
 
 ##### shared build stage #######################################################
@@ -92,15 +88,15 @@ WORKDIR ${SUPPORT}
 RUN python3 module.py init && \
     python3 module.py add-tar http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz seq SNCSEQ 2.2.9 && \
     python3 module.py add epics-modules iocStats DEVIOCSTATS 3.1.16
-RUN make -j -C  ${IOC}
+RUN make -j -C ${IOC}
 
 ##### runtime preparation stage ################################################
 
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only 
-RUN bash ${SUPPORT}/minimize.sh ${EPICS_ROOT} /MIN_ROOT
-
+WORKDIR /min_files
+RUN bash ${SUPPORT}/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
 ##### runtime stage ############################################################
 
@@ -112,6 +108,6 @@ RUN apt-get update -y && apt-get upgrade -y && \
     python3-minimal \
     && rm -rf /var/lib/apt/lists/* 
 
-COPY --from=runtime_prep /MIN_ROOT ${EPICS_BASE}
+COPY --from=runtime_prep /min_files /
 COPY --from=devtools ${VIRTUALENV} ${VIRTUALENV}
 
