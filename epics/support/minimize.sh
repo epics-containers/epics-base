@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# a script to minimuize support modules for a runtime container
+# a script to minimuize modules for a runtime container
 # moves the output folders only to dest and strips the symbols from binaries
 # usage:
 # ./minimize.sh src1 src2 src3
