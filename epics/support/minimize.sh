@@ -21,7 +21,7 @@ for folder in ${*} ; do
     if [[ -d ${folder}/configure ]] ; then
         mkdir -p ./${folder}
         # move the output folders to CWD
-        move=$(ls -d ${folder}/*(bin|configure|db|dbd|include|lib|template)/)
+        move=$(ls -d ${folder}/*(bin|configure|db|dbd|include|lib|template|ibek)/)
         mv ${move} ./${folder}
 
         # strip symbols from all binaries 
