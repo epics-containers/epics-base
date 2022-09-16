@@ -29,6 +29,17 @@ PARSE_MACROS = re.compile(r"^([A-Z_a-z0-9]*)\s*=\s*(.*)$", flags=re.M)
 SHELLIFY_FIND = re.compile(r"\$\(([^\)]*)\)")
 SHELLIFY_REPLACE = r"${\1}"
 
+def build(patch: Path, sub_folder:Path):
+    if patch:
+        result = subprocess.call(["bash", patch])
+        if result != 0:
+            raise RuntimeError(f"patching {sub_folder} failed")
+
+    do_dependencies()
+    result = subprocess.call(["make", "-C", sub_folder])
+    if result != 0:
+        raise RuntimeError(f"build of {sub_folder} failed")
+    result = subprocess.call(["make", "clean", "-C", sub_folder])
 
 @click.group(invoke_without_command=True)
 @click.version_option()
@@ -75,7 +86,7 @@ def add(
         patch:        path to a script that patches the source before compilation
     """
     server = server or "github.com"
-    sub_folder = f"{SUPPORT}/{module}"
+    sub_folder = Path(SUPPORT) / module
 
     git_args = (
         f"git clone -q --branch {tag} --depth 1 "
@@ -92,16 +103,7 @@ def add(
     with RELEASE.open("a") as stream:
         stream.write(f"{macro}=$(SUPPORT)/{module}\n")
 
-    if patch:
-        result = subprocess.call([patch])
-        if result != 0:
-            raise RuntimeError(f"patching {sub_folder} failed")
-
-    do_dependencies()
-    result = subprocess.call(["make", "-j", "-C", sub_folder])
-    if result != 0:
-        raise RuntimeError(f"build of {sub_folder} failed")
-
+    build(patch, sub_folder)
 
 @cli.command()
 @click.argument("url")
@@ -133,7 +135,7 @@ def add_tar(
         patch:        path to a script that patches the source before compilation
     """
     dash_tag = tag.replace(".", "-")
-    sub_folder = f"{SUPPORT}/{module}"
+    sub_folder = Path(SUPPORT) / module
     url = url.format(TAG=tag)
 
     wget_args = f"wget {url}"
@@ -161,15 +163,7 @@ def add_tar(
     with RELEASE.open("a") as stream:
         stream.write(f"{macro}=$(SUPPORT)/{module}\n")
 
-    if patch:
-        result = subprocess.call([patch])
-        if result != 0:
-            raise RuntimeError(f"patching {sub_folder} failed")
-
-    do_dependencies()
-    result = subprocess.call(["make", "-j", "-C", sub_folder])
-    if result != 0:
-        raise RuntimeError(f"build of {sub_folder} failed")
+    build(patch, sub_folder)
 
 @cli.command()
 def init():

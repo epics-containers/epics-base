@@ -17,9 +17,9 @@ shopt -s extglob
 
 # loop over all module folders we were passed
 for folder in ${*} ; do
-    mkdir -p ./${folder}
     # epics modules have a configure folder
     if [[ -d ${folder}/configure ]] ; then
+        mkdir -p ./${folder}
         # move the output folders to CWD
         move=$(ls -d ${folder}/*(bin|configure|db|dbd|include|lib|template)/)
         mv ${move} ./${folder}
@@ -29,7 +29,8 @@ for folder in ${*} ; do
             strip ${binfolder}/*/* || :
         done
     else
-        # non-modules are moved verbatim to CWD
+        # non-module: move the whole folder verbatim to CWD
+        mkdir -p ./$(dirname ${folder}) # make sure parent exists
         mv ${folder} ./${folder}
     fi
 done

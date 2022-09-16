@@ -85,10 +85,10 @@ RUN bash patch-base.sh && \
 # add fundamental support modules and empty IOC
 COPY epics ${EPICS_ROOT}
 WORKDIR ${SUPPORT}
-RUN python3 module.py init && \
-    python3 module.py add-tar http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz seq SNCSEQ 2.2.9 && \
-    python3 module.py add epics-modules iocStats DEVIOCSTATS 3.1.16
-RUN make -j -C ${IOC}
+RUN python3 module.py init
+RUN python3 module.py add-tar http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz seq SNCSEQ 2.2.9
+RUN python3 module.py add epics-modules iocStats DEVIOCSTATS 3.1.16
+RUN make -C ${IOC} && make clean
 
 ##### runtime preparation stage ################################################
 
