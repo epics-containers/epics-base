@@ -14,7 +14,8 @@ jobs:
       fail-fast: true
       matrix:
         target: ["runtime", "developer"]
-        architecture: ["rtems", "linux"]
+        # architecture: ["rtems", "linux"]
+        architecture: ["linux"]
 
     steps:
       - name: Cache Docker layers

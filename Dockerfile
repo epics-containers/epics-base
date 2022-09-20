@@ -59,14 +59,14 @@ COPY scripts/patch-linux.sh ${EPICS_ROOT}/patch-base.sh
 
 ##### unique developer setup for rtems iocs ####################################
 
-FROM devtools AS developer-rtems
+# FROM devtools AS developer-rtems
 
-ENV RTEMS_TOP=/rtems
+# ENV RTEMS_TOP=/rtems
 
-# pull in RTEMS toolchain and patch files
-COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
-COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
-COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
+# # pull in RTEMS toolchain and patch files
+# COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+# COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
+# COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
 
 
 ##### shared build stage #######################################################
