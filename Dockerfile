@@ -72,7 +72,7 @@ RUN ls -R /repos
 
 # get and build epics-base and devIocStats
 WORKDIR ${SUPPORT}
-COPY scripts/modules.py scripts/base.ibek.modules.yaml .
+COPY modules.py *modules.yaml .
 RUN python3 modules.py install base.ibek.modules.yaml
 COPY epics ${EPICS_ROOT}
 RUN make -C ${IOC} && make clean -C ${IOC}
@@ -97,5 +97,5 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* 
 
 COPY --from=runtime_prep /min_files /
-COPY --from=devtools ${VIRTUALENV} ${VIRTUALENV}
+COPY --from=developer ${VIRTUALENV} ${VIRTUALENV}
 
