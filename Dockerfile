@@ -5,24 +5,19 @@ ARG TARGET_ARCHITECTURE=linux
 
 FROM ubuntu:22.04 AS environment
 
-ENV EPICS_VERSION=R7.0.6.1
 ARG TARGET_ARCHITECTURE
-# EPICS BASE Envrionment
+
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV EPICS_HOST_ARCH=linux-x86_64
-ENV PATH=${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
-# Python Virtual Environment
 ENV VIRTUALENV /venv
-ENV PATH=${VIRTUALENV}/bin:$PATH
-# IOC Environment
+ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 
 WORKDIR ${EPICS_ROOT}
-
 
 ##### setup shared developer tools stage #######################################
 
@@ -45,10 +40,6 @@ RUN apt-get update -y && apt-get upgrade -y && \
     ssh-client \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
-
-# container venv. Always used because PATH will pick up its python executable
-RUN python3 -m venv ${VIRTUALENV} && \
-    pip install ibek
 
 ##### unique developer setup for linux soft iocs ###############################
 
@@ -73,21 +64,16 @@ COPY scripts/patch-linux.sh ${EPICS_ROOT}/patch-base.sh
 
 FROM developer-${TARGET_ARCHITECTURE} AS developer
 
-# get the epics-base source including PVA submodules
-RUN git config --global advice.detachedHead false && \
-    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git 
+# PATH makes this venv the default for the container - install ibek in the venv
+RUN python3 -m venv ${VIRTUALENV} && \
+    pip install ibek==0.9.1
 
-# build epics-base
-RUN bash patch-base.sh && \
-    make -j $(nproc) -C ${EPICS_BASE} && \
-    make clean -j $(nproc) -C ${EPICS_BASE}
+RUN ls -R /repos
 
-# add fundamental support modules and empty IOC
+# get and build epics-base and devIocStats
 WORKDIR ${SUPPORT}
-COPY scripts/module.py .
-RUN python3 module.py init
-RUN python3 module.py add-tar http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz seq SNCSEQ 2.2.9
-RUN python3 module.py add epics-modules iocStats DEVIOCSTATS 3.1.16
+COPY scripts/modules.py scripts/base.ibek.modules.yaml .
+RUN python3 modules.py install base.ibek.modules.yaml
 COPY epics ${EPICS_ROOT}
 RUN make -C ${IOC} && make clean -C ${IOC}
 
@@ -103,6 +89,7 @@ RUN bash ${SUPPORT}/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
 FROM environment as runtime
 
+# add runtime system dependencies
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     libpython3-stdlib \
