@@ -1,95 +1,54 @@
-# EPICS 7 Base Dockerfile
+# escape=`
 
-##### shared environment stage #################################################
-ARG TARGET_ARCHITECTURE=linux
+# Setting up a Windows Build Container for EPICS
+# Based on information from:
+#   https://github.com/Microsoft/vs-Dockerfiles
+#   https://docs.epics-controls.org/projects/how-tos/en/latest/getting-started/installation-windows.html
 
-# RTEMS build imcompatible with python2 from ubuntu:22.04
-FROM ubuntu:22.04 AS environment
+ARG FROM_IMAGE=mcr.microsoft.com/windows/servercore:ltsc2022
+FROM ${FROM_IMAGE} as developer
 
-ENV EPICS_VERSION=R7.0.6.1
-ARG TARGET_ARCHITECTURE
-# EPICS BASE Envrionment
-ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
-ENV EPICS_ROOT=/repos/epics
-ENV EPICS_BASE=${EPICS_ROOT}/epics-base
-ENV EPICS_HOST_ARCH=linux-x86_64
-ENV PATH=${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
-ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
-# IOC Environment
-ENV PYTHON_PKG ${EPICS_ROOT}/python
-ENV PYTHONPATH=${PYTHON_PKG}/local/lib/python3.10/dist-packages/ 
-ENV PATH=${PYTHON_PKG}/local/bin:${PATH}
-ENV SUPPORT ${EPICS_ROOT}/support
-ENV IOC ${EPICS_ROOT}/ioc
+# Reset the shell.
+SHELL ["cmd", "/S", "/C"]
 
-WORKDIR ${EPICS_ROOT}
+# Set up environment to collect install errors.
+COPY Install.cmd C:\TEMP\
+ADD https://aka.ms/vscollect.exe C:\TEMP\collect.exe
 
+# Download channel for fixed install.
+ARG CHANNEL_URL=https://aka.ms/vs/17/release/channel
+ADD ${CHANNEL_URL} C:\TEMP\VisualStudio.chman
 
-##### setup shared developer tools stage #######################################
+# Download and install Build Tools for Visual Studio 2022 for native desktop workload.
+ADD https://aka.ms/vs/17/release/vs_buildtools.exe C:\TEMP\vs_buildtools.exe
+RUN C:\TEMP\Install.cmd C:\TEMP\vs_buildtools.exe --quiet --wait --norestart --nocache `
+    --channelUri C:\TEMP\VisualStudio.chman `
+    --installChannelUri C:\TEMP\VisualStudio.chman `
+    --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended`
+    --installPath C:\BuildTools
 
-FROM environment AS devtools
+# TODO relplace these ADD with wget or similar
 
-# install build tools and utilities
-RUN apt-get update -y && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    build-essential \
-    busybox \
-    diffutils \
-    git \
-    rsync \
-    ssh-client \
-    && rm -rf /var/lib/apt/lists/*
+# Use cygwin to get bash commands
+ADD https://www.cygwin.com/setup-x86_64.exe C:\install-cygwin.exe
+RUN  C:\install-cygwin.exe -q -P bash,bash-completion,git,tar,unzip,vim,wget,zip -s http://cygwin.mirror.uk.sargasso.net
+RUN setx path "%path%;"\cygwin64\bin"
 
+# strawberry perl
+ADD https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip C:\TEMP\strawberry-perl.zip
+RUN unzip C:\TEMP\strawberry-perl.zip -d C:\strawberry-perl
+RUN setx path "C:\strawberry-perl\perl\bin;%path%"
+RUN c:\strawberry-perl\relocation.pl.bat
 
-##### unique developer setup for linux soft iocs ###############################
+# Get EPICS BASE source
+WORKDIR repos/epics/
+RUN git clone https://github.com/epics-base/epics-base.git
+COPY CONFIG_SITE.local epics-base/configure/CONFIG_SITE.local
 
-FROM devtools AS developer-linux
+RUN /BuildTools/VC/Auxiliary/Build/vcvars64.bat && cd epics-base && gmake
 
-COPY scripts/patch-linux.sh ${EPICS_ROOT}/patch-base.sh
-
-
-##### unique developer setup for rtems iocs ####################################
-
-FROM devtools AS developer-rtems
-
-ENV RTEMS_TOP=/rtems
-
-# pull in RTEMS toolchain
-COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
-
-# copy patch files for rtems
-COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
-COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
-
-
-##### shared build stage #######################################################
-
-FROM developer-${TARGET_ARCHITECTURE} AS developer
-
-# get the epics-base source including PVA submodules
-# sed command minimizes image size by removing symbols (for review)
-RUN git config --global advice.detachedHead false && \
-    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git 
-
-# build
-RUN bash patch-base.sh && \
-    make -j $(nproc) -C ${EPICS_BASE} && \
-    make clean -j $(nproc) -C ${EPICS_BASE}
-
-COPY scripts/minimize.sh ${EPICS_ROOT}
-
-##### runtime preparation stage ################################################
-
-FROM developer AS runtime_prep
-
-# get the products from the build stage and reduce to runtime assets only 
-RUN bash ${EPICS_ROOT}/minimize.sh ${EPICS_ROOT} /MIN_ROOT
-
-
-##### runtime stage ############################################################
-
-FROM environment as runtime
-
-COPY --from=runtime_prep /MIN_ROOT ${EPICS_BASE}
-
+# I'm having issues with the powershell entrypoint in vs-Dockerfiles
+# use CMD with vcvars64.bat instead
+CMD [ "cmd" ]
+# this is failing - manually run instead for now
+#ENTRYPOINT ["/K", "/BuildTools/VC/Auxiliary/Build/vcvars64.bat"]
