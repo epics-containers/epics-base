@@ -27,20 +27,24 @@ RUN C:\TEMP\Install.cmd C:\TEMP\vs_buildtools.exe --quiet --wait --norestart --n
     --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended`
     --installPath C:\BuildTools
 
-
-# Use cygwin to get bash commands and EPICS build dependencies of perl, zip and make
+# Use cygwin to get bash commands
 ADD https://www.cygwin.com/setup-x86_64.exe C:\install-cygwin.exe
-RUN  C:\install-cygwin.exe -q -P bash,bash-completion,git,make,perl,tar,vim,wget,zip -s http://cygwin.mirror.uk.sargasso.net
-ENV PATH=\cygwin64\bin
-# Add the package installer apt-cyg
-ADD https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg C:\TEMP\apt-cyg
-RUN install C:\TEMP\apt-cyg /bin
+RUN  C:\install-cygwin.exe -q -P bash,bash-completion,git,tar,unzip,vim,wget,zip -s http://cygwin.mirror.uk.sargasso.net
+RUN setx path "%path%;\cygwin64\bin
 
-# NOTE:
-# https://docs.epics-controls.org/projects/how-tos/en/latest/getting-started/installation-windows.html
-# Above URL recommends MSYS2 instead of Cygwin - TODO review this choice
+# Get EPICS BASE source
+WORKDIR repos/epics/
+RUN git clone https://github.com/epics-base/epics-base.git
+COPY CONFIG_SITE.local epics-base/configure/CONFIG_SITE.local
+
+# strawberry perl (and make)
+ADD https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip C:\TEMP\strawberry-perl.zip
+RUN unzip C:\TEMP\strawberry-perl.zip -d C:\strawberry-perl
+RUN setx path "C:\strawberry-perl\perl\bin;%path%"
+RUN c:\strawberry-perl\relocation.pl.bat
 
 # I'm having issues with the powershell entrypoint in vs-Dockerfiles
 # use CMD with vcvars64.bat instead
-CMD [ "cmd.exe /K /BuildTools/VC/Auxiliary/Build/vcvars64.bat" ]
-# ENTRYPOINT ["C:\BuildTools\Common7\Tools\VsDevCmd.bat", "&&", "powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass"]
+CMD [ "cmd" ]
+# this is failing - manually run instead for now
+#ENTRYPOINT ["/K", "/BuildTools/VC/Auxiliary/Build/vcvars64.bat"]
