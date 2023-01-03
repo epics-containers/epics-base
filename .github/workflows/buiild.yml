@@ -15,9 +15,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        target: ["runtime", "developer"]
-        # architecture: ["rtems", "linux"]
-        architecture: ["linux"]
+        architecture: ["rtems", "linux"]
 
     steps:
       - name: Log in to GitHub Docker Registry
@@ -28,16 +26,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            ghcr.io/${{ github.repository }}-${{ matrix.architecture }}-${{ matrix.target }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=tag
-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -46,19 +34,50 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ matrix.architecture }}-buildx-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ matrix.architecture }}-buildx-
 
-      - name: Build image
+      - name: Docker developer meta
+        id: meta-dev
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-${{ matrix.architecture }}-developer
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+
+      - name: Build developer image
         uses: docker/build-push-action@v2
         with:
           push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
-          target: ${{ matrix.target }}
+          target: developer
           build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-dev.outputs.tags }}
+          labels: ${{ steps.meta-dev.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Docker runtime meta
+        id: meta-run
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-${{ matrix.architecture }}-runtime
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
+          target: runtime
+          build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
+          tags: ${{ steps.meta-run.outputs.tags }}
+          labels: ${{ steps.meta-run.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache-new
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Stop the cache growing indefinitely (remove when the below is fixed)
