@@ -5,10 +5,10 @@
 # usage:
 # ./minimize.sh src dest
 #
-# src:  directory to look for subfolders to be minimized 
+# src:  directory to look for subfolders to be minimized
 #       (e.g. /reps/epics/support)
 # dest: destination for stripped binaries and folders
-# 
+#
 # this is destructive of the source directory (for speed) so is intended
 # for use in a discarded container build stage
 
@@ -28,9 +28,12 @@ for folder in $(ls -d */) ; do
         move=$(ls -d ${folder}/*(bin|configure|db|dbd|include|lib|template)/)
         mv ${move} ${dest}/${folder}
 
-        # strip symbols from all binaries 
+        # strip symbols from all binaries
         for binfolder in ${dest}/${folder}/*(bin|lib) ; do
-            strip ${binfolder}/*/* || :
+            strip ${binfolder}/linux-x86_64/* || :
+            if [[ -f /rtems/toolchain/powerpc-rtems5/bin/strip ]] ; then
+                /rtems/toolchain/powerpc-rtems5/bin/strip ${binfolder}/RTEMS-beatnik/* || :
+            fi
         done
     else
         # non support modules moved verbatim

@@ -17,7 +17,7 @@ ENV PATH=${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 # IOC Environment
 ENV PYTHON_PKG ${EPICS_ROOT}/python
-ENV PYTHONPATH=${PYTHON_PKG}/local/lib/python3.10/dist-packages/ 
+ENV PYTHONPATH=${PYTHON_PKG}/local/lib/python3.10/dist-packages/
 ENV PATH=${PYTHON_PKG}/local/bin:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
@@ -70,7 +70,7 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 # get the epics-base source including PVA submodules
 # sed command minimizes image size by removing symbols (for review)
 RUN git config --global advice.detachedHead false && \
-    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git 
+    git clone --recursive --depth 1 -b ${EPICS_VERSION} https://github.com/epics-base/epics-base.git
 
 # build
 RUN bash patch-base.sh && \
@@ -83,7 +83,7 @@ COPY scripts/minimize.sh ${EPICS_ROOT}
 
 FROM developer AS runtime_prep
 
-# get the products from the build stage and reduce to runtime assets only 
+# get the products from the build stage and reduce to runtime assets only
 RUN bash ${EPICS_ROOT}/minimize.sh ${EPICS_ROOT} /MIN_ROOT
 
 
@@ -91,5 +91,5 @@ RUN bash ${EPICS_ROOT}/minimize.sh ${EPICS_ROOT} /MIN_ROOT
 
 FROM environment as runtime
 
-COPY --from=runtime_prep /MIN_ROOT ${EPICS_BASE}
+COPY --from=runtime_prep /MIN_ROOT ${EPICS_ROOT}
 
