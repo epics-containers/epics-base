@@ -5,7 +5,7 @@
 # usage:
 # ./minimize.sh src1 src2 src3
 #
-# the src folders are moved to the CWD and trimmed (if the 
+# the src folders are moved to the CWD and trimmed (if the
 # folder is an EPICS module)
 # The full path of the original folder is preserved under the CWD.
 #
@@ -24,9 +24,12 @@ for folder in ${*} ; do
         move=$(ls -d ${folder}/*(bin|configure|db|dbd|include|lib|template|ibek)/)
         mv ${move} ./${folder}
 
-        # strip symbols from all binaries 
-        for binfolder in ./${folder}/*(bin|lib) ; do
-            strip ${binfolder}/*/* || :
+        # strip symbols from all binaries
+        for binfolder in ${dest}/${folder}/*(bin|lib) ; do
+            strip ${binfolder}/linux-x86_64/* || :
+            if [[ -f /rtems/toolchain/powerpc-rtems5/bin/strip ]] ; then
+                /rtems/toolchain/powerpc-rtems5/bin/strip ${binfolder}/RTEMS-beatnik/* || :
+            fi
         done
     else
         # non-module: move the whole folder verbatim to CWD

@@ -50,14 +50,14 @@ COPY scripts/patch-linux.sh ${EPICS_ROOT}/patch-base.sh
 
 ##### unique developer setup for rtems iocs ####################################
 
-# FROM devtools AS developer-rtems
+FROM devtools AS developer-rtems
 
-# ENV RTEMS_TOP=/rtems
+ENV RTEMS_TOP=/rtems
 
-# # pull in RTEMS toolchain and patch files
-# COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
-# COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
-# COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
+# pull in RTEMS toolchain and patch files
+COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
+COPY scripts/rtems-epics-base.patch ${EPICS_ROOT}
 
 
 ##### shared build stage #######################################################
@@ -81,7 +81,7 @@ RUN make -C ${IOC} && make clean -C ${IOC}
 
 FROM developer AS runtime_prep
 
-# get the products from the build stage and reduce to runtime assets only 
+# get the products from the build stage and reduce to runtime assets only
 WORKDIR /min_files
 RUN bash ${SUPPORT}/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
@@ -94,7 +94,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     libpython3-stdlib \
     python3-minimal \
-    && rm -rf /var/lib/apt/lists/* 
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=runtime_prep /min_files /
 COPY --from=developer ${VIRTUALENV} ${VIRTUALENV}
