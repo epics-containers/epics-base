@@ -1,4 +1,5 @@
 .history
 repos/
+repos-build/
 *.log
 *.out
