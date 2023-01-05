@@ -1,0 +1,259 @@
+diff --git a/configure/CONFIG_SITE b/configure/CONFIG_SITE
+index 2a47f9d..c010958 100644
+--- a/configure/CONFIG_SITE
++++ b/configure/CONFIG_SITE
+@@ -15,6 +15,7 @@
+ #CROSS_COMPILER_TARGET_ARCHS = RTEMS-uC5282
+ #CROSS_COMPILER_TARGET_ARCHS = RTEMS-pc586
+ CROSS_COMPILER_TARGET_ARCHS += linux-ppc
++CROSS_COMPILER_TARGET_ARCHS += linux-arm_elhf
+ 
+ # Set this when your IOC and the host use different paths
+ # to access the application. This will be needed to boot
+diff --git a/devIocStats/os/RTEMS/devIocStatsOSD.h b/devIocStats/os/RTEMS/devIocStatsOSD.h
+index b21cc0e..8b9c99b 100644
+--- a/devIocStats/os/RTEMS/devIocStatsOSD.h
++++ b/devIocStats/os/RTEMS/devIocStatsOSD.h
+@@ -66,6 +66,9 @@
+ # endif
+ 
+ #include <string.h>
++#if   (__RTEMS_MAJOR__ > 4)
++#undef random
++#endif
+ #include <stdlib.h>
+ 
+ #define sysBootLine rtems_bsdnet_bootp_cmdline
+diff --git a/devIocStats/os/RTEMS/osdCpuUsage.c b/devIocStats/os/RTEMS/osdCpuUsage.c
+index 674d66a..073e54c 100644
+--- a/devIocStats/os/RTEMS/osdCpuUsage.c
++++ b/devIocStats/os/RTEMS/osdCpuUsage.c
+@@ -46,9 +46,11 @@
+  */
+ 
+ #include <devIocStats.h>
+-
+-# if   (__RTEMS_MAJOR__ > 4) \
+-   || (__RTEMS_MAJOR__ == 4 && __RTEMS_MINOR__ > 7)
++# if   (__RTEMS_MAJOR__ >= 5)
++#include <rtems/score/todimpl.h>
++#include <rtems/score/threadimpl.h>
++#endif
++# if   (__RTEMS_MAJOR__ == 4 && __RTEMS_MINOR__ > 7)
+ typedef char objName[13];
+ #define RTEMS_OBJ_GET_NAME(tc,name) rtems_object_get_name((tc)->Object.id, sizeof(name),(name))
+ #ifdef SSRLAPPSMISCUTILS
+@@ -76,10 +78,10 @@ typedef char * objName;
+  * The cpu usage is done the same way as in cpukit/libmisc/cpuuse
+  * from the RTEMS source.
+  */
+-
+ static double prev_total = 0;
+ static double prev_idle  = 0;
+ 
++# if   (__RTEMS_MAJOR__ < 5)
+ static void cpu_ticks(double *total, double *idle)
+ {
+     Objects_Information *obj;
+@@ -114,10 +116,69 @@ static void cpu_ticks(double *total, double *idle)
+         }
+     }
+ }
++#else
++
++typedef struct {
++  Timestamp_Control    total;
++  Timestamp_Control    idle;
++
++} cpu_usage_context;
++
++static bool cpu_usage_visitor2( Thread_Control *the_thread, void *arg)
++{
++	cpu_usage_context *ctx;
++
++	Timestamp_Control  used;
++	char               name[ 38 ];	
++	ctx = arg;
++
++/* thread name to locate IDLE thread */
++		
++	_Thread_Get_name( the_thread, name, sizeof(name) );
++	
++/* CPU time used by this thread since last reset */
++	
++	_Thread_Get_CPU_time_used( the_thread, &used );
++
++/* add to total */
++
++	_Timestamp_Add_to(&ctx->total, &used);
++  
++	if (name[0])
++	{
++            if (name[0] == 'I' && name[1] == 'D' &&
++                name[2] == 'L' && name[3] == 'E') {	    
++			
++			ctx->idle = used;
++            }
++	}
++
++	return false;
++}
++
++static void cpu_ticks(double *total, double *idle)
++{
++	cpu_usage_context ctx;
++
++/* clear counters */
++
++	_Timestamp_Set_to_zero(&ctx.total);
++	_Timestamp_Set_to_zero(&ctx.idle);
++	
++/* iterate throught all tasks (threads) */
++
++	rtems_task_iterate( cpu_usage_visitor2, &ctx);
++
++/* convert to doubles */
++
++	*idle = _Timestamp_Get_seconds(&ctx.idle) + _Timestamp_Get_nanoseconds(&ctx.idle) / 1e9;
++	*total = _Timestamp_Get_seconds(&ctx.total) + _Timestamp_Get_nanoseconds(&ctx.total) / 1e9;
++}
+ 
++#endif
+ int devIocStatsInitCpuUsage (void)
+ {
+-    cpu_ticks(&prev_total, &prev_idle);
++	cpu_ticks(&prev_total, &prev_idle);
+ #ifdef SSRLAPPSMISCUTILS
+     miscu_cpu_load_percentage_init(&prev_uptime, &prev_idletime);
+ #endif
+@@ -126,17 +187,12 @@ int devIocStatsInitCpuUsage (void)
+ 
+ int devIocStatsGetCpuUsage (loadInfo *pval)
+ {
+-#ifdef SSRLAPPSMISCUTILS
+-    pval->cpuLoad = miscu_cpu_load_percentage(&prev_uptime, &prev_idletime);
+-    if (isnan(pval->cpuLoad)) return -1; else return 0;
+-#else
+     double total;
+     double idle;
+     double delta_total;
+     double delta_idle;
+-
+-    cpu_ticks(&total, &idle);
+-
++    
++	cpu_ticks(&total, &idle);
+     if (total >= prev_total) {
+         delta_total = total - prev_total;
+         delta_idle  = idle - prev_idle;
+@@ -148,9 +204,13 @@ int devIocStatsGetCpuUsage (loadInfo *pval)
+     prev_idle = idle;
+ 
+     if (delta_idle > delta_total)
++    {
+         pval->cpuLoad = 0.0;
++    }
+     else
+-        pval->cpuLoad = 100.0 - (delta_idle * 100.0 / delta_total);
+-    return 0;
+-#endif
++    {
++	pval->cpuLoad = 100.0 - (delta_idle * 100.0 / delta_total);
++    }
++
++	return (0);
+ }
+diff --git a/devIocStats/os/RTEMS/osdSuspTasks.c b/devIocStats/os/RTEMS/osdSuspTasks.c
+index e875f57..5fece13 100644
+--- a/devIocStats/os/RTEMS/osdSuspTasks.c
++++ b/devIocStats/os/RTEMS/osdSuspTasks.c
+@@ -39,25 +39,48 @@
+  */
+ 
+ #include <devIocStats.h>
++#include <stdio.h>
+ 
+-int devIocStatsInitSuspTasks (void) { return 0; }
++# if (__RTEMS_MAJOR__ >= 5)
+ 
+-int devIocStatsGetSuspTasks (int *pval)
++#include <taskwd.h>
++
++static int n = 0;
++
++static void Notify(void *usr, epicsThreadId tid, int suspended)
+ {
+-    Objects_Control   *o;
+-    Objects_Id        id = OBJECTS_ID_INITIAL_INDEX;
+-    Objects_Id        nid;
+-    int               n = 0;
+-    Objects_Locations l;
+-
+-    /* count all suspended (LOCAL -- cannot deal with remote ones ATM) tasks */
+-    while ( (o = _Objects_Get_next( &_RTEMS_tasks_Information, id, &l, &nid )) ) {
+-        if ( (RTEMS_ALREADY_SUSPENDED == rtems_task_is_suspended( nid )) ) {
+-            n++;
+-        }
+-        _Thread_Enable_dispatch();
+-        id = nid;
+-    }
+-    *pval = n;
+-    return 0;
++	if (suspended)
++	{
++		n++;
++	}
++	else
++	{
++		n--;
++	}
+ }
++
++/* register to be notified of any changes */
++
++static taskwdMonitor mon;
++
++int devIocStatsInitSuspTasks (void)
++{
++	n = 0;
++	
++	mon.insert = NULL;
++	mon.remove = NULL;
++	mon.notify = Notify;
++	
++	taskwdMonitorAdd(&mon, NULL);
++
++	return 0;
++}
++
++int devIocStatsGetSuspTasks(int *pval)
++{
++	*pval = n;
++
++	return (0);
++}
++
++#endif
+diff --git a/devIocStats/os/RTEMS/osdWorkspaceUsage.c b/devIocStats/os/RTEMS/osdWorkspaceUsage.c
+index 3d0568d..e9acc87 100644
+--- a/devIocStats/os/RTEMS/osdWorkspaceUsage.c
++++ b/devIocStats/os/RTEMS/osdWorkspaceUsage.c
+@@ -27,6 +27,9 @@
+ #include <devIocStats.h>
+ 
+ int devIocStatsInitWorkspaceUsage (void) { return 0; }
++# if   (__RTEMS_MAJOR__ > 4)
++#include <rtems/score/wkspace.h>
++#endif
+ 
+ int devIocStatsGetWorkspaceUsage (memInfo *pval)
+ {
+@@ -40,7 +43,7 @@ int devIocStatsGetWorkspaceUsage (memInfo *pval)
+ #endif /* RTEMS_PROTECTED_HEAP */
+ # if   (__RTEMS_MAJOR__ > 4) \
+    || (__RTEMS_MAJOR__ == 4 && __RTEMS_MINOR__ > 9)
+-    pval->numBytesTotal    = Configuration.work_space_size;
++    pval->numBytesTotal    = rtems_configuration_get_work_space_size();
+ #else
+     pval->numBytesTotal    = _Configuration_Table->work_space_size;
+ #endif

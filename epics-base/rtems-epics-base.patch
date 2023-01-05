@@ -1,13 +1,3 @@
-#!/usr/bin/env bash
-RTEMS_KERNEL=${RTEMS_TOP}/rtems
-RTEMS_TOOLCHAIN=${RTEMS_TOP}/toolchain
-
-echo "RTEMS_KERNEL = ${RTEMS_KERNEL}" >> configure/CONFIG_SITE.local
-echo "RTEMS_TOOLCHAIN = ${RTEMS_TOOLCHAIN}" >> configure/CONFIG_SITE.local
-cat configure/CONFIG_SITE.local
-
-cd ${EPICS_ROOT}/epics-base
-patch -p1 << EOF
 diff --git a/configure/CONFIG_SITE b/configure/CONFIG_SITE
 index 03ec6d1..d1d23cc 100644
 --- a/configure/CONFIG_SITE
@@ -108,4 +98,3 @@ index 38fb6bf..a5d04a3 100644
  #define FIRST_DRIVER_CONFIG &netdriver_config
 
  #endif
-EOF

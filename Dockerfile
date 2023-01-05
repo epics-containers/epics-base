@@ -42,20 +42,23 @@ RUN apt-get update -y && apt-get upgrade -y && \
 
 FROM devtools AS developer
 
-# pull in RTEMS toolchain and patch files
+# pull in RTEMS toolchain
 COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
-COPY scripts/patch-rtems.sh ${EPICS_ROOT}/patch-base.sh
 
 # PATH makes this venv the default for the container - install ibek in the venv
 RUN python3 -m venv ${VIRTUALENV} && \
     pip install ibek==0.9.1
 
-# get and build epics-base and devIocStats
-WORKDIR ${SUPPORT}
-COPY modules.py *modules.yaml .
+WORKDIR ${EPICS_ROOT}
+COPY epics-base .
+# get and build epics-base
 RUN python3 modules.py install base.ibek.modules.yaml
 RUN python3 modules.py build base.ibek.modules.yaml
-COPY epics ${EPICS_ROOT}
+# get and build devIocStats
+COPY epics .
+RUN python3 modules.py install support.ibek.modules.yaml
+RUN python3 modules.py build support.ibek.modules.yaml
+# build generic IOC
 RUN make -C ${IOC} && make clean -C ${IOC}
 
 ##### runtime preparation stage ################################################
@@ -66,7 +69,7 @@ ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 
 # get the products from the build stage and reduce to runtime assets only
 WORKDIR /min_files
-RUN bash ${SUPPORT}/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
+RUN bash ${EPICS_ROOT}/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
 # add the RTEMS toolchain if needed
 RUN if [[ ${TARGET_ARCHITECTURE} == "rtems" ]]; then \

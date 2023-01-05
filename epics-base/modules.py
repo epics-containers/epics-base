@@ -95,7 +95,6 @@ def install(modules: Path, module: str = None):  # type: ignore
     """
     init()
     module_list = read_yaml(Path(modules), module)
-    os.chdir(SUPPORT)
 
     for item in module_list:
         if item.path.exists():
@@ -133,10 +132,10 @@ def build(modules: Path, module: str = None):  # type: ignore
     """
 
     module_list = read_yaml(Path(modules), module)
-    os.chdir(SUPPORT)
 
     for item in module_list:
         if item.patch:
+            os.chdir(item.path)  # make sure patch will work on the correct repo
             do_run(f"bash {item.patch}")
 
         do_dependencies()
