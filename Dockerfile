@@ -63,11 +63,11 @@ ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 
 # get the products from the build stage and reduce to runtime assets only
 WORKDIR /min_files
-RUN bash ${EPICS_ROOT}/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
+RUN bash /ctools/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
 # add the RTEMS toolchain if needed
 RUN if [[ ${TARGET_ARCHITECTURE} == "rtems" ]]; then \
-        mv ${RTEMS_TOP} /min_files/${RTEMS_TOP} \
+        mv ${RTEMS_TOP} /min_files/${RTEMS_TOP}; \
     fi
 
 ##### runtime stage ############################################################

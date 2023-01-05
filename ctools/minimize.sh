@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # a script to minimuize modules for a runtime container
-# moves the output folders only to dest and strips the symbols from binaries
+# moves the output folders only to CWD and strips the symbols from binaries
 # usage:
-# ./minimize.sh src1 src2 src3
+# minimize.sh src1 src2 src3
 #
 # the src folders are moved to the CWD and trimmed (if the
 # folder is an EPICS module)
@@ -14,6 +14,8 @@
 
 set -xe
 shopt -s extglob
+
+dest=$(pwd)
 
 # loop over all module folders we were passed
 for folder in ${*} ; do
