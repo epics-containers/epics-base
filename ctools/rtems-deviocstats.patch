@@ -1,15 +1,3 @@
-diff --git a/configure/CONFIG_SITE b/configure/CONFIG_SITE
-index 2a47f9d..c010958 100644
---- a/configure/CONFIG_SITE
-+++ b/configure/CONFIG_SITE
-@@ -15,6 +15,7 @@
- #CROSS_COMPILER_TARGET_ARCHS = RTEMS-uC5282
- #CROSS_COMPILER_TARGET_ARCHS = RTEMS-pc586
- CROSS_COMPILER_TARGET_ARCHS += linux-ppc
-+CROSS_COMPILER_TARGET_ARCHS += linux-arm_elhf
- 
- # Set this when your IOC and the host use different paths
- # to access the application. This will be needed to boot
 diff --git a/devIocStats/os/RTEMS/devIocStatsOSD.h b/devIocStats/os/RTEMS/devIocStatsOSD.h
 index b21cc0e..8b9c99b 100644
 --- a/devIocStats/os/RTEMS/devIocStatsOSD.h

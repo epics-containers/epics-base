@@ -1,6 +1,6 @@
 build
 repos*
-README.md
+**/README.md
 .gitignore
 LICENSE
 .github

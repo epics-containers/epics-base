@@ -1,9 +1,0 @@
-modules:
-  epics-base:
-    macro: EPICS_BASE
-    tag: R7.0.6.1
-    git: github.com/epics-base/epics-base.git
-    git_args: --recursive
-    make_args: -j $(nproc)
-    path: /repos/epics/epics-base
-    patch: /repos/epics/patch-rtems.sh

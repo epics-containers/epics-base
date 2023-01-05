@@ -135,7 +135,8 @@ def build(modules: Path, module: str = None):  # type: ignore
 
     for item in module_list:
         if item.patch:
-            os.chdir(item.path)  # make sure patch will work on the correct repo
+            # patch scripts may assume they are in the root of the repo
+            os.chdir(item.path)
             do_run(f"bash {item.patch}")
 
         do_dependencies()

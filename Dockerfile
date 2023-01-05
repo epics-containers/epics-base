@@ -16,9 +16,9 @@ ENV RTEMS_TOP=/rtems
 
 WORKDIR ${EPICS_ROOT}
 
-##### setup shared developer tools stage #######################################
+##### developer / build stage ##################################################
 
-FROM environment AS devtools
+FROM environment AS developer
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
@@ -38,26 +38,20 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
-##### developer / build stage ##################################################
-
-FROM devtools AS developer
-
 # pull in RTEMS toolchain
 COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+# copy in IOC template
+COPY epics ${EPICS_ROOT}
 
 # PATH makes this venv the default for the container - install ibek in the venv
 RUN python3 -m venv ${VIRTUALENV} && \
     pip install ibek==0.9.1
 
-WORKDIR ${EPICS_ROOT}
-COPY epics-base .
-# get and build epics-base
-RUN python3 modules.py install base.ibek.modules.yaml
-RUN python3 modules.py build base.ibek.modules.yaml
-# get and build devIocStats
-COPY epics .
-RUN python3 modules.py install support.ibek.modules.yaml
-RUN python3 modules.py build support.ibek.modules.yaml
+WORKDIR /ctools
+COPY ctools .
+# get and build epics-base and support modules
+RUN python modules.py install base.ibek.modules.yaml
+RUN python modules.py build base.ibek.modules.yaml
 # build generic IOC
 RUN make -C ${IOC} && make clean -C ${IOC}
 
