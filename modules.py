@@ -5,7 +5,9 @@ Provide a basic CLI for managing a set of EPICS support modules
 import os
 import re
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List
 
 import click
 import ruamel.yaml as yaml
@@ -29,6 +31,41 @@ SHELLIFY_FIND = re.compile(r"\$\(([^\)]*)\)")
 SHELLIFY_REPLACE = r"${\1}"
 
 
+@dataclass
+class Module:
+    """
+    a dataclass to describe the entries in the modules yaml file
+    TODO Naimh: should this be done with API schema?
+
+    name:       name of the module
+    tag:        tag to checkout
+    git:        git repo to pull from
+    tar:        tarball to pull from
+    macro:      macro name to use in RELEASE file
+    path:       path to module
+    patch:      path to patch script
+    git_args:   additional arguments to pass to git
+    make_args:  additional arguments to pass to make
+    """
+
+    name: str
+    tag: str
+    git: str = ""
+    tar: str = ""
+    macro: str = ""
+    path: Path = None  # type: ignore
+    patch: Path = None  # type: ignore
+    git_args: str = ""
+    make_args: str = ""
+
+    def __post_init__(self):
+        # ensure correct types
+        if self.path:
+            self.path = Path(self.path)
+        if self.patch:
+            self.patch = Path(self.patch)
+
+
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
@@ -41,7 +78,7 @@ def cli(ctx):
 
 
 @cli.command()
-@click.argument("modules")
+@click.argument("modules", type=click.Path(exists=True))
 @click.option("--module", required=False)
 def install(modules: Path, module: str = None):  # type: ignore
     """
@@ -57,42 +94,79 @@ def install(modules: Path, module: str = None):  # type: ignore
         module:     when set, only make this module and skip the rest
     """
     init()
+    module_list = read_yaml(Path(modules), module)
     os.chdir(SUPPORT)
 
-    # TODO Naimh should this be done with API schema (maybe?)
-    # TODO then we get validation and a nice object graph instead of nested Dict
-    with open(modules, "r") as stream:
-        modules = yaml.safe_load(stream)
+    for item in module_list:
+        if item.path.exists():
+            print(f"{item.name} exists. Skipping ..")
+        elif item.git:
+            git_args = (
+                f"git clone {item.git_args} -q --branch {item.tag} "
+                f"https://{item.git} {item.path}"
+            )
+            do_run(git_args)
+        elif item.tar:
+            add_tar(item.tar, item.name, item.tag)
 
-    for name, item in modules["modules"].items():
+        # TODO this appends multiple instances of each module if run > once
+        # TODO would be helpful to do a replace of previous macro entry instead
+        with RELEASE.open("a") as stream:
+            stream.write(f"{item.macro}={item.path}\n")
+
+
+@cli.command()
+@click.argument("modules", type=click.Path(exists=True))
+@click.option("--module", required=False)
+def build(modules: Path, module: str = None):  # type: ignore
+    """
+    Run this as a second stage after doing install.
+
+    Iterates through the yaml file passed in modules and for each entry:
+    - implement any patches by running the patch script
+    - fixup all configure release files in support to point at module
+    - makes the module
+
+    arguments:
+        modules:    path to a YAML file containing module definitions
+        module:     when set, only make this module and skip the rest
+    """
+
+    module_list = read_yaml(Path(modules), module)
+    os.chdir(SUPPORT)
+
+    for item in module_list:
+        if item.patch:
+            do_run(f"bash {item.patch}")
+
+        do_dependencies()
+        do_run(f"make {item.make_args} -C {item.path}")
+        do_run(f"make {item.make_args} clean -C {item.path}", errors=False)
+
+
+def read_yaml(modules: Path, module) -> List[Module]:
+    """
+    parse a modules yaml file and return a list of Module objects
+
+    if module is set, only return the module with that name
+    """
+    with modules.open("r") as stream:
+        module_dict = yaml.safe_load(stream)
+
+    module_list = []
+
+    for name, item in module_dict["modules"].items():
         if module and module != name:
             continue
 
-        tag = item.get("tag")
-        git = item.get("git")
-        gitargs = item.get("gitargs", "")
-        makeargs = item.get("makeargs", "")
-        path = item.get("path")
-        tar = item.get("tar")
+        next_module = Module(name, **item)
 
-        sub_folder = Path(path) if path else Path(SUPPORT) / name
+        if not next_module.path:
+            next_module.path = Path(SUPPORT) / name
 
-        if sub_folder.exists():
-            print(f"{name} exists. Skippig ..")
-        elif git:
-            git_args = (
-                f"git clone {gitargs} -q --branch {tag} " f"https://{git} {sub_folder}"
-            )
-            do_run(git_args)
-        elif tar:
-            add_tar(tar, name, tag)
+        module_list.append(next_module)
 
-        # TODO this appends multiple instances of each module if run > once
-        # TODO would be helful to do a replace of previous macro entry instead
-        with RELEASE.open("a") as stream:
-            stream.write(f"{item['macro']}={sub_folder}\n")
-
-        build(item.get("patch"), sub_folder, makeargs)
+    return module_list
 
 
 def add_tar(url: str, module: str, tag: str):
@@ -151,15 +225,6 @@ def do_run(command: str, errors=True):
     p = subprocess.run(command, shell=True)
     if p.returncode != 0 and errors:
         raise RuntimeError("subprocess failed.")
-
-
-def build(patch: Path, sub_folder: Path, makeargs: str):
-    if patch:
-        do_run(f"bash {patch}")
-
-    do_dependencies()
-    do_run(f"make {makeargs} -C {sub_folder}")
-    do_run(f"make {makeargs} clean -C {sub_folder}", errors=False)
 
 
 def do_dependencies():

@@ -3,15 +3,15 @@ modules:
     macro: EPICS_BASE
     tag: R7.0.6.1
     git: github.com/epics-base/epics-base.git
-    gitargs: --recursive
-    makeargs: -j $(nproc)
+    git_args: --recursive
+    make_args: -j $(nproc)
     path: /repos/epics/epics-base
     patch: /repos/epics/patch-base.sh
-  seq:
-    macro: SNCSEQ
-    tag: 2.2.9
-    tar: http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
-  iocStats:
-    macro: DEVIOCSTATS
-    tag: 3.1.16
-    git: github.com/epics-modules/iocStats.git
+  # seq:
+  #   macro: SNCSEQ
+  #   tag: 2.2.9
+  #   tar: http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
+  # iocStats:
+  #   macro: DEVIOCSTATS
+  #   tag: 3.1.16
+  #   git: github.com/epics-modules/iocStats.git
