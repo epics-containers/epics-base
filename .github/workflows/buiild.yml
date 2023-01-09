@@ -28,7 +28,6 @@ jobs:
       - name: Docker Build Script
         env:
           REPOSITORY: ghcr.io/${{ github.repository }}
-          ARCHITECTURES: linux
           TAG: ${{ github.ref_name }}
           PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
         run: .github/workflows/build.sh
