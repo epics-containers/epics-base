@@ -10,38 +10,34 @@
 # container registry with the appropriate permissions to push
 #
 # INPUTS:
-#   REPOSITORY: the container registry to push to
-#   TAG: the tag to use for the container image
 #   PUSH: if true, push the container image to the registry
+#   TAG: the tag to use for the container image
+#   REPOSITORY: the container registry to push to
 #
-
-# setup a buildx driver for multi-arch / remote cached builds
-# NOTE: if you have docker aliased to podman this line will fail but the
-# rest of the script will run as podman does not need to create a context
-(
-    set -x
-    docker buildx create --driver docker-container --use
-    docker buildx version
-)
 
 set -e
 
 # Provide some defaults for the controlling Environment Variables.
 PUSH=${PUSH:-false}
 TAG=${TAG:-latest}
-
 if [[ -z ${REPOSITORY} ]] ; then
-    # For local builds, infer the ghcr registry from git remote
+    # For local builds, infer the registry from git remote (assumes ghcr)
     REPOSITORY=$(git remote -v | sed  "s/.*@github.com:\(.*\)\.git.*/ghcr.io\/\1/" | tail -1)
     echo "inferred registry ${REPOSITORY}"
 fi
 
+# support docker or podman (requires softlink docker->podman)
 if docker -v | grep podman ; then
+    # podman command line parameters
     cachefrom="--cache-from=${REPOSITORY}"
     cacheto="--cache-to=${REPOSITORY}"
 else
-    cachefrom="--cache-from=type=registry,ref=${REPOSITORY}"
-    cacheto="--cache-to=type=registry,ref=${REPOSITORY},mode=max"
+    # setup a buildx driver for multi-arch / remote cached builds
+    docker buildx create --driver docker-container --use
+    docker buildx version
+    # docker command line parameters
+    cachefrom="--cache-from=type=registry,ref=${REPOSITORY}:buildcache --build-arg BUILDKIT_INLINE_CACHE=1"
+    cacheto="--cache-to=type=registry,ref=${REPOSITORY}:buildcache,mode=max --build-arg BUILDKIT_INLINE_CACHE=1"
 fi
 
 do_build() {
