@@ -65,12 +65,9 @@ ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 WORKDIR /min_files
 RUN bash /ctools/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
-RUN if [[ ${TARGET_ARCHITECTURE} == "rtems" ]]; then \
-        # add the RTEMS toolchain if needed
-        mv ${RTEMS_TOP} /min_files/${RTEMS_TOP}; \
-    else \
-        # remove RTEMS binaries if not needed
-        rm -rf $(find /min_files/ -name RTEMS-beatnik); \
+RUN if [[ ${TARGET_ARCHITECTURE} != "rtems" ]]; then \
+    # remove RTEMS binaries if not needed
+    rm -rf $(find /min_files/ -name RTEMS-beatnik); \
     fi
 
 ##### runtime stage ############################################################
