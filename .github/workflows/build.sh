@@ -1,48 +1,46 @@
 #!/bin/bash
 
-# A script for building EPICS container images
+# A script for building EPICS container images.
 #
 # Note that this is implemented in bash to make it portable between
-# CI frameworks. This approach uses the minimum of GitHub Actions
-# and also works locally for testing outside of CI.
-#
-# PREREQUISITES: the caller should be authenticated to the
-# container registry with the appropriate permissions to push
+# CI frameworks. This approach uses the minimum of GitHub Actions.
+# Also works locally for testing outside of CI (with podman-docker installed)
 #
 # INPUTS:
-#   REPOSITORY: the container registry to push to
-#   TAG: the tag to use for the container image
 #   PUSH: if true, push the container image to the registry
-#
+#   TAG: the tag to use for the container image
+#   REGISTRY: the container registry to push to
+#   REPOSITORY: the container repository to push to
+#   CR_USER: the username to use for the registry
+#   CR_TOKEN: the password to use for the registry
+#   CACHE: the directory to use for caching
 
-# setup a buildx driver for multi-arch / remote cached builds
-# NOTE: if you have docker aliased to podman this line will fail but the
-# rest of the script will run as podman does not need to create a context
-(
-    set -x
-    docker buildx create --driver docker-container --use
-    docker buildx version
-)
 
-set -e
-
-# Provide some defaults for the controlling Environment Variables.
 PUSH=${PUSH:-false}
 TAG=${TAG:-latest}
-
+REGISTRY=${REGISTRY:-ghcr.io}
 if [[ -z ${REPOSITORY} ]] ; then
-    # For local builds, infer the ghcr registry from git remote
+    # For local builds, infer the registry from git remote (assumes ghcr)
     REPOSITORY=$(git remote -v | sed  "s/.*@github.com:\(.*\)\.git.*/ghcr.io\/\1/" | tail -1)
     echo "inferred registry ${REPOSITORY}"
 fi
 
+NEWCACHE=${CACHE}-new
+
 if docker -v | grep podman ; then
-    cachefrom="--cache-from=${REPOSITORY}"
-    cacheto="--cache-to=${REPOSITORY}"
+    # podman command line parameters (just use local cache)
+    cachefrom=""
+    cacheto=""
 else
-    cachefrom="--cache-from=type=registry,ref=${REPOSITORY}"
-    cacheto="--cache-to=type=registry,ref=${REPOSITORY},mode=max"
+    # setup a buildx driver for multi-arch / remote cached builds
+    docker buildx create --driver docker-container --use
+    # docker command line parameters
+    cachefrom=--cache-from=type=local,src=${CACHE}
+    cacheto=--cache-to=type=local,dest=${NEWCACHE},mode=max
 fi
+
+# login to the container registry
+echo ${CR_TOKEN} | docker login ${REGISTRY} -u ${CR_USER} --password-stdin
 
 do_build() {
     ARCHITECTURE=$1
@@ -85,3 +83,6 @@ do_build linux runtime ${cachefrom}
 do_build rtems developer ${cachefrom}
 do_build rtems runtime ${cachefrom} ${cacheto}
 
+# remove old cache to avoid indefinite growth
+rm -rf ${CACHE}
+mv ${NEWCACHE} ${CACHE}
