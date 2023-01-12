@@ -1,24 +1,88 @@
-#/bin/bash
+#!/bin/bash
 
-# Launcher script to get the latest version of podman and use it to
-# build this repo's container image matrix
+# A script for building EPICS container images.
 #
-# podman is chosen as the container image builder because caching to
-# GHCR works well. We get the latest version of podman inside a container
-# because GHA runners only have podman 3.4 (ships with Ubuntu 22.04)
+# Note that this is implemented in bash to make it portable between
+# CI frameworks. This approach uses the minimum of GitHub Actions.
+# Also works locally for testing outside of CI (with podman-docker installed)
+#
+# INPUTS:
+#   PUSH: if true, push the container image to the registry
+#   TAG: the tag to use for the container image
+#   REGISTRY: the container registry to push to
+#   REPOSITORY: the container repository to push to
+#   CR_USER: the username to use for the registry
+#   CR_TOKEN: the password to use for the registry
+#   CACHE: the directory to use for caching
 
-# Its as simple as this :-)
-#   Github Actions is launching a virtual machine with Ubuntu 22.04
-#   In GHA we run podman 3.4
-#   podman runs a container with podman 4.3.1 inside
-#   podman inside builds our container images and pushes them to GHCR
-#       it also does caching to GHCR
 
-THISDIR=$(dirname $0)
+PUSH=${PUSH:-false}
+TAG=${TAG:-latest}
+REGISTRY=${REGISTRY:-ghcr.io}
+if [[ -z ${REPOSITORY} ]] ; then
+    # For local builds, infer the registry from git remote (assumes ghcr)
+    REPOSITORY=$(git remote -v | sed  "s/.*@github.com:\(.*\)\.git.*/ghcr.io\/\1/" | tail -1)
+    echo "inferred registry ${REPOSITORY}"
+fi
 
-podman run -v $(pwd):$(pwd) -w $(pwd) \
-       -e REGISTRY -e REPOSITORY -e USER -e TOKEN \
-       -e ARCHITECTURES -e TAG -e PUSH \
-       --cap-add=sys_admin --cap-add mknod --device=/dev/fuse \
-       --security-opt seccomp=unconfined --security-opt label=disable \
-       quay.io/podman/stable bash $THISDIR/build2.sh
+NEWCACHE=${CACHE}-new
+
+if docker -v | grep podman ; then
+    # podman command line parameters (just use local cache)
+    cachefrom=""
+    cacheto=""
+else
+    # setup a buildx driver for multi-arch / remote cached builds
+    docker buildx create --driver docker-container --use
+    # docker command line parameters
+    cachefrom=--cache-from=type=local,src=${CACHE}
+    cacheto=--cache-to=type=local,dest=${NEWCACHE},mode=max
+fi
+
+# login to the container registry
+echo ${CR_TOKEN} | docker login ${REGISTRY} -u ${CR_USER} --password-stdin
+
+do_build() {
+    ARCHITECTURE=$1
+    TARGET=$2
+    shift 2
+
+    image_name=${REPOSITORY}-${ARCHITECTURE}-${TARGET}:${TAG}
+    args="
+        --build-arg TARGET_ARCHITECTURE=${ARCHITECTURE}
+        --target ${TARGET}
+        -t ${image_name}
+    "
+
+    if [[ ${PUSH} == "true" ]] ; then
+        args="--push "${args}
+    fi
+
+    echo "CONTAINER BUILD FOR ${image_name} with ARCHITECTURE=${ARCHITECTURE} ..."
+
+    (
+        set -x
+        docker buildx build ${args} ${*} .
+    )
+}
+
+# EDIT BELOW FOR YOUR BUILD MATRIX REQUIREMENTS
+#
+# All builds should use cachefrom and the last should use cacheto
+# The last build should execute all stages for the cache to be fully useful.
+#
+# intermediate builds should use cachefrom but will also see the local cache
+#
+# If None of the builds use all stages in the Dockerfile then consider adding
+# cache-to to more than one build. But note there is a tradeoff in performance
+# as every layer will get uploaded to the cache even if it just came out of the
+# cache.
+
+do_build linux developer ${cachefrom}
+do_build linux runtime ${cachefrom}
+do_build rtems developer ${cachefrom}
+do_build rtems runtime ${cachefrom} ${cacheto}
+
+# remove old cache to avoid indefinite growth
+rm -rf ${CACHE}
+mv ${NEWCACHE} ${CACHE}
