@@ -11,8 +11,6 @@
 #   TAG: the tag to use for the container image
 #   REGISTRY: the container registry to push to
 #   REPOSITORY: the container repository to push to
-#   CR_USER: the username to use for the registry
-#   CR_TOKEN: the password to use for the registry
 #   CACHE: the directory to use for caching
 
 ARCH=${ARCH:-linux}
@@ -41,15 +39,12 @@ fi
 
 set -e
 
-# login to the container registry
-echo ${CR_TOKEN} | docker login ${REGISTRY} -u ${CR_USER} --password-stdin
-
 do_build() {
     ARCHITECTURE=$1
     TARGET=$2
     shift 2
 
-    image_name=${REPOSITORY}-${ARCHITECTURE}-${TARGET}:${TAG}
+    image_name=${REGISTRY}/${REPOSITORY}-${ARCHITECTURE}-${TARGET}:${TAG}
     args="
         --build-arg TARGET_ARCHITECTURE=${ARCHITECTURE}
         --target ${TARGET}
