@@ -15,7 +15,7 @@ jobs:
     env:
       CACHE: /tmp/.buildx-cache
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         architecture: ["rtems", "linux"]
 
