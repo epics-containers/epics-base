@@ -39,6 +39,8 @@ else
     cacheto=--cache-to=type=local,dest=${NEWCACHE},mode=max
 fi
 
+set -e
+
 # login to the container registry
 echo ${CR_TOKEN} | docker login ${REGISTRY} -u ${CR_USER} --password-stdin
 
