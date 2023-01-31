@@ -5,12 +5,9 @@ Provide a basic CLI for managing a set of EPICS support modules
 import os
 import re
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 
 import click
-import ruamel.yaml as yaml
 
 # note requirement for enviroment variable EPICS_BASE
 EPICS_BASE = Path(str(os.getenv("EPICS_BASE")))
@@ -31,41 +28,6 @@ SHELLIFY_FIND = re.compile(r"\$\(([^\)]*)\)")
 SHELLIFY_REPLACE = r"${\1}"
 
 
-@dataclass
-class Module:
-    """
-    a dataclass to describe the entries in the modules yaml file
-    TODO Naimh: should this be done with API schema?
-
-    name:       name of the module
-    tag:        tag to checkout
-    git:        git repo to pull from
-    tar:        tarball to pull from
-    macro:      macro name to use in RELEASE file
-    path:       path to module
-    patch:      path to patch script
-    git_args:   additional arguments to pass to git
-    make_args:  additional arguments to pass to make
-    """
-
-    name: str
-    tag: str
-    git: str = ""
-    tar: str = ""
-    macro: str = ""
-    path: Path = None  # type: ignore
-    patch: Path = None  # type: ignore
-    git_args: str = ""
-    make_args: str = ""
-
-    def __post_init__(self):
-        # ensure correct types
-        if self.path:
-            self.path = Path(self.path)
-        if self.patch:
-            self.patch = Path(self.patch)
-
-
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
@@ -78,9 +40,20 @@ def cli(ctx):
 
 
 @cli.command()
-@click.argument("modules", type=click.Path(exists=True))
-@click.option("--module", required=False)
-def install(modules: Path, module: str = None):  # type: ignore
+@click.argument("macro", type=str)
+@click.argument("tag", type=str)
+@click.argument("source", type=str)
+@click.option("--path", default="", type=click.Path())
+@click.option("--patch", default="", type=click.Path())
+@click.option("--git_args", default="", type=str)
+def install(
+    macro: str,
+    tag: str,
+    source: str,
+    path: Path,
+    patch: Path,
+    git_args: str,
+):
     """
     Iterate through the yaml file passed in modules and for each entry:
     - pull a support module from a repo
@@ -90,109 +63,80 @@ def install(modules: Path, module: str = None):  # type: ignore
     - fixup all configure release files in support to point at this
 
     arguments:
-        modules:    path to a YAML file containing module definitions
-        module:     when set, only make this module and skip the rest
+        macro:      macro name to use in RELEASE file
+        tag:        tag to checkout
+        source:     git repo or tar url to pull from
+        path:       path to root location for module
+        patch:      path to patch script
+        git_args:   additional arguments to pass to git
     """
     init()
-    module_list = read_yaml(Path(modules), module)
 
-    for item in module_list:
-        if item.path.exists():
-            print(f"{item.name} exists. Skipping ..")
-        elif item.git:
-            git_args = (
-                f"git clone {item.git_args} -q --branch {item.tag} "
-                f"https://{item.git} {item.path}"
-            )
-            do_run(git_args)
-        elif item.tar:
-            add_tar(item.tar, item.name, item.tag)
+    if path == "":
+        name = macro.lower()
+        path = SUPPORT / name
+    else:
+        path = Path(path)
+        name = path.stem
 
-        # TODO this appends multiple instances of each module if run > once
-        # TODO would be helpful to do a replace of previous macro entry instead
-        with RELEASE.open("a") as stream:
-            stream.write(f"{item.macro}={item.path}\n")
+    if path.exists():
+        print(f"{name} exists. Skipping ..")
+    elif source.endswith(".git"):
+        git_args = f"git clone {git_args} -q --branch {tag} " f"https://{source} {path}"
+        do_run(git_args)
+    else:
+        add_tar(source, path, tag)
 
+    if patch != "":
+        patch = Path(patch).resolve()
+        # chdir allows patch scripts to assume they are in the root of the repo
+        os.chdir(path)
+        do_run(f"bash {patch}")
 
-@cli.command()
-@click.argument("modules", type=click.Path(exists=True))
-@click.option("--module", required=False)
-def build(modules: Path, module: str = None):  # type: ignore
-    """
-    Run this as a second stage after doing install.
+    # add or replace our macro pointing to our module path in the RELEASE file
+    with RELEASE.open("r") as stream:
+        lines = stream.readlines()
+    outlines = []
+    replaced = False
+    for line in lines:
+        if line.startswith(f"{macro}="):
+            outlines.append(f"{macro}={path}")
+            replaced = True
+        else:
+            outlines.append(line)
+    if not replaced:
+        outlines.append(f"{macro}={path}")
 
-    Iterates through the yaml file passed in modules and for each entry:
-    - implement any patches by running the patch script
-    - fixup all configure release files in support to point at module
-    - makes the module
-
-    arguments:
-        modules:    path to a YAML file containing module definitions
-        module:     when set, only make this module and skip the rest
-    """
-
-    module_list = read_yaml(Path(modules), module)
-
-    for item in module_list:
-        if item.patch:
-            # patch scripts may assume they are in the root of the repo
-            os.chdir(item.path)
-            do_run(f"bash {item.patch}")
-
-        do_dependencies()
-        do_run(f"make {item.make_args} -C {item.path}")
-        do_run(f"make {item.make_args} clean -C {item.path}", errors=False)
+    with RELEASE.open("w") as stream:
+        stream.writelines(outlines)
 
 
-def read_yaml(modules: Path, module) -> List[Module]:
-    """
-    parse a modules yaml file and return a list of Module objects
-
-    if module is set, only return the module with that name
-    """
-    with modules.open("r") as stream:
-        module_dict = yaml.safe_load(stream)
-
-    module_list = []
-
-    for name, item in module_dict["modules"].items():
-        if module and module != name:
-            continue
-
-        next_module = Module(name, **item)
-
-        if not next_module.path:
-            next_module.path = Path(SUPPORT) / name
-
-        module_list.append(next_module)
-
-    return module_list
-
-
-def add_tar(url: str, module: str, tag: str):
+def add_tar(url: str, path: Path, tag: str):
     """
     pull a tarred support module from a repo and expand it
 
     arguments:
 
         url:    url to a tar file
-        module: module name of the epics support module
+        path:   path to root location for module
         tag:    the git tag of the specific version to pull
     """
-    sub_folder = Path(SUPPORT) / module
     url = url.format(TAG=tag)
+    folder = path.parent
 
-    wget_args = f"wget {url}"
+    print(f"downloading {url} to {folder}")
+    wget_args = f"wget {url} -P {folder}"
     do_run(wget_args)
 
-    tar_file = url.split("/")[-1]
-    tar_args = f"tar zxf {tar_file}"
+    tar_file = str(folder / url.split("/")[-1])
+    tar_args = f"tar zxf {tar_file} -C {folder}"
     do_run(tar_args)
 
-    new_folder = Path(tar_file[0 : tar_file.find(".tar")])
+    new_folder = folder / tar_file[0 : tar_file.find(".tar")]
     # throw away tar file to keep image size tight
     Path(tar_file).unlink()
-    new_folder.rename(sub_folder)
+    print(f"moving {new_folder} to {path}")
+    new_folder.rename(path)
 
 
 def init():

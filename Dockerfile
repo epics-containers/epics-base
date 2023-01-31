@@ -71,9 +71,13 @@ RUN python3 -m venv ${VIRTUALENV} && \
 
 COPY ctools /ctools
 WORKDIR /ctools
-# get and build epics-base and support modules
-RUN python modules.py install /ctools/base.ibek.modules.yaml
-RUN python modules.py build /ctools/base.ibek.modules.yaml
+# get and build epics-base and essential support modules
+RUN python3 modules.py install EPICS_BASE R7.0.6.1 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
+RUN make -C ${EPICS_BASE} -j $(nproc)
+RUN python3 modules.py install SNCSEQ 2.2.6 http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
+RUN make -C ${SUPPORT}/sncseq -j $(nproc)
+RUN python3 modules.py install DEVIOCSTATS 3.1.16 github.com/epics-modules/iocStats.git --patch patch-deviocstats.sh
+RUN make -C ${SUPPORT}/deviocstats -j $(nproc)
 
 # build generic IOC
 RUN make -C ${IOC} && make clean -C ${IOC}
