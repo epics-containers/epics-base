@@ -18,8 +18,6 @@ ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV RTEMS_TOP=/rtems
 
-WORKDIR ${EPICS_ROOT}
-
 ##### developer / build stage ##################################################
 
 FROM environment AS devtools
