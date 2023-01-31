@@ -2,6 +2,10 @@
 
 ##### shared environment stage #################################################
 
+# MUST supply a build arg TARGET_ARCHITECTURE or the developer- stage will fail
+ARG TARGET_ARCHITECTURE
+ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
+
 FROM ubuntu:22.04 AS environment
 
 ENV EPICS_ROOT=/repos/epics
@@ -18,7 +22,7 @@ WORKDIR ${EPICS_ROOT}
 
 ##### developer / build stage ##################################################
 
-FROM environment AS developer
+FROM environment AS devtools
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
@@ -38,8 +42,26 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
-# pull in RTEMS toolchain
+
+##### unique developer setup for linux soft iocs ###############################
+
+FROM devtools AS developer-linux
+
+RUN echo developer linux
+
+##### unique developer setup for rtems iocs ####################################
+
+FROM devtools AS developer-rtems
+
+ENV RTEMS_TOP=/rtems
+
+# pull in RTEMS toolchain and patch files
 COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+
+##### shared build stage #######################################################
+
+FROM developer-${TARGET_ARCHITECTURE} AS developer
+
 # copy in IOC template
 COPY epics ${EPICS_ROOT}
 
@@ -47,28 +69,22 @@ COPY epics ${EPICS_ROOT}
 RUN python3 -m venv ${VIRTUALENV} && \
     pip install ibek==0.9.1
 
+COPY ctools /ctools
 WORKDIR /ctools
-COPY ctools .
 # get and build epics-base and support modules
-RUN python modules.py install base.ibek.modules.yaml
-RUN python modules.py build base.ibek.modules.yaml
+RUN python modules.py install /ctools/base.ibek.modules.yaml
+RUN python modules.py build /ctools/base.ibek.modules.yaml
+
 # build generic IOC
 RUN make -C ${IOC} && make clean -C ${IOC}
 
 ##### runtime preparation stage ################################################
 
 FROM developer AS runtime_prep
-ARG TARGET_ARCHITECTURE=linux
-ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 
 # get the products from the build stage and reduce to runtime assets only
 WORKDIR /min_files
 RUN bash /ctools/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
-
-RUN if [[ ${TARGET_ARCHITECTURE} != "rtems" ]]; then \
-    # remove RTEMS binaries if not needed
-    rm -rf $(find /min_files/ -name RTEMS-beatnik); \
-    fi
 
 ##### runtime stage ############################################################
 

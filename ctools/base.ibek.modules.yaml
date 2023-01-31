@@ -6,7 +6,7 @@ modules:
     git_args: --recursive
     make_args: -j $(nproc)
     path: /repos/epics/epics-base
-    patch: /ctools/patch-rtems-epics-base.sh
+    patch: /ctools/patch-epics-base.sh
   seq:
     macro: SNCSEQ
     tag: 2.2.9
@@ -15,4 +15,4 @@ modules:
     macro: DEVIOCSTATS
     tag: 3.1.16
     git: github.com/epics-modules/iocStats.git
-    patch: /ctools/patch-rtems-deviocstats.sh
+    patch: /ctools/patch-deviocstats.sh
