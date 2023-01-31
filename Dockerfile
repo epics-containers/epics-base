@@ -47,7 +47,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
 
 FROM devtools AS developer-linux
 
-RUN echo developer linux
+# nothing additoinal to do for linux
 
 ##### unique developer setup for rtems iocs ####################################
 

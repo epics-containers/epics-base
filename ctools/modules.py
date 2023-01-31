@@ -100,15 +100,17 @@ def install(
     replaced = False
     for line in lines:
         if line.startswith(f"{macro}="):
-            outlines.append(f"{macro}={path}")
+            outlines.append(f"{macro}={path}\n")
             replaced = True
         else:
             outlines.append(line)
     if not replaced:
-        outlines.append(f"{macro}={path}")
+        outlines.append(f"{macro}={path}\n")
 
     with RELEASE.open("w") as stream:
         stream.writelines(outlines)
+
+    do_dependencies()
 
 
 def add_tar(url: str, path: Path, tag: str):
