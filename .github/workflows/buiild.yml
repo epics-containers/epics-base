@@ -14,6 +14,10 @@ jobs:
       packages: write
     env:
       CACHE: /tmp/.buildx-cache
+    strategy:
+      fail-fast: true
+      matrix:
+        architecture: ["rtems", "linux"]
 
     steps:
       - name: Checkout
@@ -23,13 +27,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE }}
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-${{ matrix.architecture }}-buildx-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ runner.os }}-${{ matrix.architecture }}-buildx-
 
       - name: Docker Build Script
         env:
           REGISTRY: ghcr.io
+          ARCH: ${{ matrix.architecture }}
           REPOSITORY: ${{ github.repository }}
           CR_USER: ${{ github.actor }}
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}

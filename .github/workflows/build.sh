@@ -15,7 +15,7 @@
 #   CR_TOKEN: the password to use for the registry
 #   CACHE: the directory to use for caching
 
-
+ARCH=${ARCH:-linux}
 PUSH=${PUSH:-false}
 TAG=${TAG:-latest}
 REGISTRY=${REGISTRY:-ghcr.io}
@@ -80,10 +80,8 @@ do_build() {
 # as every layer will get uploaded to the cache even if it just came out of the
 # cache.
 
-do_build linux developer ${cachefrom}
-do_build linux runtime ${cachefrom}
-do_build rtems developer ${cachefrom}
-do_build rtems runtime ${cachefrom} ${cacheto}
+do_build ${ARCH} developer ${cachefrom}
+do_build ${ARCH} runtime ${cachefrom} ${cacheto}
 
 # remove old cache to avoid indefinite growth
 rm -rf ${CACHE}
