@@ -44,7 +44,7 @@ do_build() {
     TARGET=$2
     shift 2
 
-    image_name=${REPOSITORY}-${ARCHITECTURE}-${TARGET}:${TAG}
+    image_name=${REGISTRY}/${REPOSITORY}-${ARCHITECTURE}-${TARGET}:${TAG}
     args="
         --build-arg TARGET_ARCHITECTURE=${ARCHITECTURE}
         --target ${TARGET}
