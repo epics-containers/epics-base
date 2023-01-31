@@ -2,7 +2,7 @@
 
 ##### shared environment stage #################################################
 
-# MUST supply a build arg TARGET_ARCHITECTURE or the developer- stage will fail
+# mandatory build args
 ARG TARGET_ARCHITECTURE
 
 FROM ubuntu:22.04 AS environment
@@ -18,6 +18,17 @@ ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV RTEMS_TOP=/rtems
 
+# global installs for runtime and developer containers
+RUN apt-get update -y && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    busybox \
+    python3-minimal \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && busybox --install
+
+RUN pip install ibek==0.9.1
+
 ##### developer / build stage ##################################################
 
 FROM environment AS devtools
@@ -27,19 +38,13 @@ RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
-    busybox \
     diffutils \
     git \
     libc-dev-bin \
-    python3-dev \
-    python3-pip \
-    python3-venv \
     re2c \
     rsync \
     ssh-client \
-    && rm -rf /var/lib/apt/lists/* \
-    && busybox --install
-
+    && rm -rf /var/lib/apt/lists/*
 
 ##### unique developer setup for linux soft iocs ###############################
 
@@ -53,7 +58,7 @@ FROM devtools AS developer-rtems
 
 ENV RTEMS_TOP=/rtems
 
-# pull in RTEMS toolchain and patch files
+# pull in RTEMS toolchain
 COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
 
 ##### shared build stage #######################################################
@@ -62,10 +67,6 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 
 # copy in IOC template
 COPY epics ${EPICS_ROOT}
-
-# PATH makes this venv the default for the container - install ibek in the venv
-RUN python3 -m venv ${VIRTUALENV} && \
-    pip install ibek==0.9.1
 
 COPY ctools /ctools
 WORKDIR /ctools
@@ -101,5 +102,4 @@ RUN apt-get update -y && apt-get upgrade -y && \
 
 # add products from build stage
 COPY --from=runtime_prep /min_files /
-COPY --from=developer ${VIRTUALENV} ${VIRTUALENV}
 
