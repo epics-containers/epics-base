@@ -2,11 +2,12 @@
 
 ##### shared environment stage #################################################
 
-FROM ubuntu:22.04 AS environment
-
 # mandatory build arg TARGET_ARCHITECTURE
 ARG TARGET_ARCHITECTURE
 
+FROM ubuntu:22.04 AS environment
+
+ARG TARGET_ARCHITECTURE
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
