@@ -2,10 +2,10 @@
 
 ##### shared environment stage #################################################
 
-# mandatory build args
-ARG TARGET_ARCHITECTURE
-
 FROM ubuntu:22.04 AS environment
+
+# mandatory build arg TARGET_ARCHITECTURE
+ARG TARGET_ARCHITECTURE
 
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
@@ -33,6 +33,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     python3-pip \
     python3-venv \
     re2c \
+    rsync \
     ssh-client \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
@@ -67,6 +68,7 @@ RUN python3 -m venv ${VIRTUALENV} --system-site-packages --symlinks && \
 COPY ctools /ctools
 WORKDIR /ctools
 # get and build epics-base and essential support modules
+RUN echo installing support modules for ${TARGET_ARCHITECTURE}
 RUN python3 modules.py install EPICS_BASE R7.0.6.1 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
 RUN make -C ${EPICS_BASE} -j $(nproc)
 RUN python3 modules.py install SNCSEQ 2.2.6 http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
