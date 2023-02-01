@@ -5,7 +5,7 @@
 # mandatory build args
 ARG TARGET_ARCHITECTURE
 
-FROM ubuntu:22.04 AS environment
+FROM ubuntu:23.04 AS environment
 
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
