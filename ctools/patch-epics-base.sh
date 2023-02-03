@@ -14,5 +14,5 @@ if [[ $TARGET_ARCHITECTURE == "rtems" ]]; then
     echo "RTEMS_TOOLCHAIN = ${RTEMS_TOOLCHAIN}" >> configure/CONFIG_SITE.local
     cat configure/CONFIG_SITE.local
 else
-    echo "No epics-base patch required for $TARGET_ARCHITECTURE"
+    echo "No epics-base patch required for architecture <$TARGET_ARCHITECTURE>"
 fi

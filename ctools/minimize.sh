@@ -17,8 +17,14 @@ shopt -s extglob
 
 dest=$(pwd)
 
+if [[ $TARGET_ARCHITECTURE == "rtems" ]]; then
+    # As RTEMS is statically linked the base and support modules are not needed
+    folder=${IOC}
+fi
+
 # loop over all module folders we were passed
 for folder in ${*} ; do
+
     # epics modules have a configure folder
     if [[ -d ${folder}/configure ]] ; then
         mkdir -p ./${folder}
@@ -29,7 +35,7 @@ for folder in ${*} ; do
         # strip symbols from all binaries
         for binfolder in ${dest}/${folder}/*(bin|lib) ; do
             strip ${binfolder}/linux-x86_64/* || :
-            if [[ -f /rtems/toolchain/powerpc-rtems5/bin/strip ]] ; then
+            if [[ $TARGET_ARCHITECTURE == "rtems" ]] ; then
                 /rtems/toolchain/powerpc-rtems5/bin/strip ${binfolder}/RTEMS-beatnik/* || :
             fi
         done

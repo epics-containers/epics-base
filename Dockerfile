@@ -2,11 +2,12 @@
 
 ##### shared environment stage #################################################
 
-# mandatory build args
+# mandatory build arg TARGET_ARCHITECTURE
 ARG TARGET_ARCHITECTURE
 
 FROM ubuntu:22.04 AS environment
 
+ARG TARGET_ARCHITECTURE
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
@@ -33,6 +34,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     python3-pip \
     python3-venv \
     re2c \
+    rsync \
     ssh-client \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
@@ -42,13 +44,11 @@ RUN apt-get update -y && apt-get upgrade -y && \
 
 FROM devtools AS developer-linux
 
-# nothing additoinal to do for linux
+# nothing additional to do for linux
 
 ##### unique developer setup for rtems iocs ####################################
 
 FROM devtools AS developer-rtems
-
-ENV RTEMS_TOP=/rtems
 
 # pull in RTEMS toolchain
 COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
@@ -61,21 +61,31 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 COPY epics ${EPICS_ROOT}
 
 # PATH makes this venv the default for the container - install ibek in the venv
-RUN python3 -m venv ${VIRTUALENV} --system-site-packages --symlinks && \
-    pip install ibek==0.9.1
+RUN python3 -m venv ${VIRTUALENV} && \
+    pip install ibek==0.9.4
 
-COPY ctools /ctools
-WORKDIR /ctools
 # get and build epics-base and essential support modules
-RUN python3 modules.py install EPICS_BASE R7.0.6.1 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
+WORKDIR /ctools
+# use partial copies of ctools at each step to protect the build cache
+COPY ctools/modules.py ctools/*epics-base* /ctools
+RUN python3 modules.py install EPICS_BASE R7.0.7 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
 RUN make -C ${EPICS_BASE} -j $(nproc)
+
 RUN python3 modules.py install SNCSEQ 2.2.6 http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
 RUN make -C ${SUPPORT}/sncseq -j $(nproc)
+
+COPY ctools/*deviocstats* /ctools
 RUN python3 modules.py install DEVIOCSTATS 3.1.16 github.com/epics-modules/iocStats.git --patch patch-deviocstats.sh
 RUN make -C ${SUPPORT}/deviocstats -j $(nproc)
 
 # build generic IOC
+COPY ctools/patch-ioc.sh /ctools
+RUN bash patch-ioc.sh
 RUN make -C ${IOC} && make clean -C ${IOC}
+
+# this script is for the next target
+# but we copy it here so that all developer derived images have it too
+COPY ctools/minimize.sh /ctools
 
 ##### runtime preparation stage ################################################
 
