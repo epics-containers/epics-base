@@ -83,12 +83,15 @@ COPY ctools/patch-ioc.sh /ctools
 RUN bash patch-ioc.sh
 RUN make -C ${IOC} && make clean -C ${IOC}
 
+# this script is for the next target
+# but we copy it here so that all developer derived images have it too
+COPY ctools/minimize.sh /ctools
+
 ##### runtime preparation stage ################################################
 
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-COPY ctools/minimize.sh /ctools
 WORKDIR /min_files
 RUN bash /ctools/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
