@@ -89,9 +89,13 @@ def install(
 
     if patch != "":
         patch = Path(patch).resolve()
-        # chdir allows patch scripts to assume they are in the root of the repo
+        # chdir allows patch scripts to assume they are in the root of their repo
         os.chdir(path)
         do_run(f"bash {patch}")
+
+        global_patch = patch.parent / "_global/global.patch"
+        if global_patch.exists():
+            do_run(f"bash {global_patch}")
 
     # add or replace our macro pointing to our module path in the RELEASE file
     with RELEASE.open("r") as stream:
