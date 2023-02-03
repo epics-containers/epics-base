@@ -68,7 +68,7 @@ RUN python3 -m venv ${VIRTUALENV} && \
 WORKDIR /ctools
 # use partial copies of ctools at each step to protect the build cache
 COPY ctools/modules.py ctools/*epics-base* /ctools
-RUN python3 modules.py install EPICS_BASE R7.0.6.1 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
+RUN python3 modules.py install EPICS_BASE R7.0.7 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
 RUN make -C ${EPICS_BASE} -j $(nproc)
 
 RUN python3 modules.py install SNCSEQ 2.2.6 http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
