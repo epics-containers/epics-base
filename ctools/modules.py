@@ -93,11 +93,12 @@ def install(
         os.chdir(path)
         do_run(f"bash {patch}")
 
-        global_patch = patch.parent.parent / "_global/global.patch"
+        global_patch = patch.parent.parent / "_global/global.sh"
         if global_patch.exists():
+            print(f"applying global patchfile at {global_patch}")
             do_run(f"bash {global_patch}")
         else:
-            print(f"no globals patchfile at {global_patch}")
+            print(f"no global patchfile at {global_patch}")
 
     # add or replace our macro pointing to our module path in the RELEASE file
     with RELEASE.open("r") as stream:
