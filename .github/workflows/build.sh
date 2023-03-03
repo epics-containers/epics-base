@@ -75,9 +75,6 @@ do_build() {
 # as every layer will get uploaded to the cache even if it just came out of the
 # cache.
 
-do_build ${ARCH} developer ${cachefrom}
-do_build ${ARCH} runtime ${cachefrom} ${cacheto}
+do_build ${ARCH} developer
+do_build ${ARCH} runtime
 
-# remove old cache to avoid indefinite growth
-rm -rf ${CACHE}
-mv ${NEWCACHE} ${CACHE}
