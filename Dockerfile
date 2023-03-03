@@ -39,6 +39,8 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
+# this script is used to output the ibek IOC schema for the hosting container
+COPY ctools/ioc-schema /usr/local/bin
 
 ##### unique developer setup for linux soft iocs ###############################
 

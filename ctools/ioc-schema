@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# a script to extract the schema from a set of ibek support files for
+# a generic IOC
+ibek ioc-schema /ctools/*/*ibek.support.yaml /tmp/schema.json
+cat /tmp/schema.json
