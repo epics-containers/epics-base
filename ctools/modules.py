@@ -89,16 +89,15 @@ def install(
 
     if patch != "":
         patch = Path(patch).resolve()
-        # chdir allows patch scripts to assume they are in the root of their repo
-        os.chdir(path)
-        do_run(f"bash {patch}")
+        # cwd allows patch scripts to assume they are in the root of their repo
+        do_run(f"bash {patch}", cwd=path)
 
-        global_patch = patch.parent.parent / "_global/global.sh"
-        if global_patch.exists():
-            print(f"applying global patchfile at {global_patch}")
-            do_run(f"bash {global_patch}")
-        else:
-            print(f"no global patchfile at {global_patch}")
+    global_patch = Path("_global/global.sh").resolve()
+    if global_patch.exists():
+        print(f"applying global patchfile at {global_patch}")
+        do_run(f"bash {global_patch}", cwd=path)
+    else:
+        print(f"no global patchfile at {global_patch}")
 
     # add or replace our macro pointing to our module path in the RELEASE file
     with RELEASE.open("r") as stream:
@@ -172,10 +171,10 @@ SUPPORT={SUPPORT}
         do_run("git config --global advice.detachedHead false")
 
 
-def do_run(command: str, errors=True):
+def do_run(command: str, errors=True, cwd=None):
     print(command)
     # use bash for enviroment variable expansion
-    p = subprocess.run(command, shell=True)
+    p = subprocess.run(command, shell=True, cwd=cwd)
     if p.returncode != 0 and errors:
         raise RuntimeError("subprocess failed.")
 
