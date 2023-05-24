@@ -50,6 +50,9 @@ do_build() {
         --target ${TARGET}
         -t ${image_name}
     "
+    if [[ ${ARCHITECTURE} == "linux" ]] ; then
+        args="${args} --platform=linux/amd64,linux/arm64"
+    fi
 
     if [[ ${PUSH} == "true" ]] ; then
         args="--push "${args}
