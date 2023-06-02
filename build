@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# a script to locally build all targets containers for this IOC
+# a script to locally build all targets containers for this IOC using podman
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${THIS_DIR}
