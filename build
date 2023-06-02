@@ -8,11 +8,11 @@ cd ${THIS_DIR}
 set -xe
 
 if [[ -z ${TARGET_ARCHITECTURE} || ${TARGET_ARCHITECTURE}=="linux" ]]; then
-podman build --target developer --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-developer .
-podman build --target runtime --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-runtime .
+podman build --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-developer .
+podman build --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-runtime .
 fi
 
 if [[ -z ${TARGET_ARCHITECTURE} || ${TARGET_ARCHITECTURE}=="rtems" ]]; then
-podman build --target developer --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-developer .
-podman build --target runtime --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-runtime .
+podman build --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-developer .
+podman build --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-runtime .
 fi

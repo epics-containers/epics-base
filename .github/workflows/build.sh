@@ -12,6 +12,7 @@
 #   REGISTRY: the container registry to push to
 #   REPOSITORY: the container repository to push to
 #   CACHE: the directory to use for caching
+#   PLATFORM: the platform to build for (linux/amd64 or linux/arm64)
 
 ARCH=${ARCH:-linux}
 PUSH=${PUSH:-false}
@@ -51,7 +52,7 @@ do_build() {
         -t ${image_name}
     "
     if [[ ${ARCHITECTURE} == "linux" ]] ; then
-        args="${args} --platform=linux/amd64,linux/arm64"
+        args="${args} --platform=${PLATFORM}"
     fi
 
     if [[ ${PUSH} == "true" ]] ; then
