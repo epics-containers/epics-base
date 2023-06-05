@@ -13,7 +13,7 @@ FROM base AS environment-amd64
 ENV EPICS_HOST_ARCH=linux-x86_64
 
 FROM base AS environment-arm64
-ENV EPICS_HOST_ARCH=darwin-aarch64
+ENV EPICS_HOST_ARCH=linux-arm
 
 FROM environment-$TARGETARCH AS environment
 
