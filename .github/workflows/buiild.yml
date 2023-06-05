@@ -8,7 +8,6 @@ jobs:
   build-push-images:
     # pull requests are a duplicate of a branch push if within the same repo.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -17,11 +16,37 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        architecture: ["rtems", "linux"]
+        include:
+          # rtems is cross compiled on ubuntu-latest
+          # linux is natively compiled on ubuntu-latest and macos-latest
+          - architecture: rtems
+            os: ubuntu-latest
+            platform: linux/amd64
+          - architecture: linux
+            os: ubuntu-latest
+            platform: linux/amd64
+          # TO ENABLE MACOS: change the above platform to
+          # platform: linux/amd64,linux/arm64
+          # this causes buildx to use QEMU for arm64 emulation.
+          # This will increase build time by 1 hour.
+
+          # MACOS is removed as it takes 3 hours. This is because there are no
+          # M1 macs in the github runners, so we still use QEMU to emulate
+          # but on an x86 mac. NOTE: once GHA starts to use M1 macs, this
+          # approach will be the FASTEST.
+          # M1 Macs are coming!: https://github.com/github/roadmap/issues/528
+          # - architecture: linux
+          #   os: macos-latest
+          #   platform: linux/arm64
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Setup docker (missing on MacOS)
+        if: runner.os == 'macos'
+        uses: docker-practice/actions-setup-docker@fd7ecdac7caf8e2c541a48c9bcc280aae59a8461
 
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v1
@@ -34,6 +59,7 @@ jobs:
         env:
           REGISTRY: ghcr.io
           ARCH: ${{ matrix.architecture }}
+          PLATFORM: ${{ matrix.platform }}
           REPOSITORY: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
           PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}

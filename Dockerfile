@@ -2,22 +2,32 @@
 
 ##### shared environment stage #################################################
 
-# mandatory build arg TARGET_ARCHITECTURE
+# mandatory build args
+#   TARGET_ARCHITECTURE: the epics cross compile target platform: rtems or linux
+#   TARGETARCH: the buildx platform: amd64 or arm64
 ARG TARGET_ARCHITECTURE
 
-FROM ubuntu:22.04 AS environment
+FROM ubuntu:22.04 AS base
+
+FROM base AS environment-amd64
+ENV EPICS_HOST_ARCH=linux-x86_64
+
+FROM base AS environment-arm64
+ENV EPICS_HOST_ARCH=linux-arm
+
+FROM environment-$TARGETARCH AS environment
 
 ARG TARGET_ARCHITECTURE
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
 ENV EPICS_ROOT=/repos/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
-ENV EPICS_HOST_ARCH=linux-x86_64
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 ENV VIRTUALENV /venv
 ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV RTEMS_TOP=/rtems
+
 
 ##### developer / build stage ##################################################
 
