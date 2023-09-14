@@ -12,7 +12,7 @@ podman build --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_
 podman build --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-runtime .
 fi
 
-if [[ -z ${TARGET_ARCHITECTURE} || ${TARGET_ARCHITECTURE}=="rtems" ]]; then
+if [[ ${TARGET_ARCHITECTURE}=="rtems" ]]; then
 podman build --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-developer .
 podman build --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-runtime .
 fi

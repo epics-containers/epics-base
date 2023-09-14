@@ -5,6 +5,7 @@
 # mandatory build args
 #   TARGET_ARCHITECTURE: the epics cross compile target platform: rtems or linux
 #   TARGETARCH: the buildx platform: amd64 or arm64
+
 ARG TARGET_ARCHITECTURE
 
 FROM ubuntu:22.04 AS base
@@ -18,15 +19,18 @@ ENV EPICS_HOST_ARCH=linux-arm
 FROM environment-$TARGETARCH AS environment
 
 ARG TARGET_ARCHITECTURE
+
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
-ENV EPICS_ROOT=/repos/epics
+ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 ENV VIRTUALENV /venv
 ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
+ENV GLOBAL_RELEASE ${SUPPORT}/configure/RELEASE
 ENV IOC ${EPICS_ROOT}/ioc
 ENV RTEMS_TOP=/rtems
+ENV EPICS_VERSION=R7.0.7
 
 
 ##### developer / build stage ##################################################
@@ -49,9 +53,6 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
-# this script is used to output the ibek IOC schema for the hosting container
-COPY ctools/ioc-schema /usr/local/bin
-
 ##### unique developer setup for linux soft iocs ###############################
 
 FROM devtools AS developer-linux
@@ -69,35 +70,20 @@ COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TO
 
 FROM developer-${TARGET_ARCHITECTURE} AS developer
 
-# copy in IOC template
-COPY epics ${EPICS_ROOT}
+# copy initial epics folder structure
+COPY epics /epics
 
-# PATH makes this venv the default for the container - install ibek in the venv
-RUN python3 -m venv ${VIRTUALENV} && \
-    pip install ibek==0.9.4
+# prepare tools settings
+RUN git config --global advice.detachedHead false
 
-# get and build epics-base and essential support modules
-WORKDIR /ctools
-# use partial copies of ctools at each step to protect the build cache
-COPY ctools/modules.py ctools/*epics-base* /ctools
-RUN python3 modules.py install EPICS_BASE R7.0.7 github.com/epics-base/epics-base.git --patch patch-epics-base.sh --path ${EPICS_BASE} --git_args --recursive
+
+# get and build EPICS base
+RUN git clone https://github.com/epics-base/epics-base.git -q --branch ${EPICS_VERSION} --recursive ${EPICS_BASE}
+RUN bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc)
 
-RUN python3 modules.py install SNCSEQ 2.2.6 http://www-csr.bessy.de/control/SoftDist/sequencer/releases/seq-{TAG}.tar.gz
-RUN make -C ${SUPPORT}/sncseq -j $(nproc)
-
-COPY ctools/*deviocstats* /ctools
-RUN python3 modules.py install DEVIOCSTATS 3.1.16 github.com/epics-modules/iocStats.git --patch patch-deviocstats.sh
-RUN make -C ${SUPPORT}/deviocstats -j $(nproc)
-
-# build generic IOC
-COPY ctools/patch-ioc.sh /ctools
-RUN bash patch-ioc.sh
-RUN make -C ${IOC} && make clean -C ${IOC}
-
-# this script is for the next target
-# but we copy it here so that all developer derived images have it too
-COPY ctools/minimize.sh /ctools
+# setup a global python venv and install ibek
+RUN python3 -m venv ${VIRTUALENV} && pip install ibek
 
 ##### runtime preparation stage ################################################
 
@@ -105,7 +91,7 @@ FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
 WORKDIR /min_files
-RUN bash /ctools/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
+RUN bash /epics/scripts/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
 
 ##### runtime stage ############################################################
 
