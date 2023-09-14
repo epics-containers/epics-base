@@ -19,12 +19,15 @@ jobs:
         include:
           # rtems is cross compiled on ubuntu-latest
           # linux is natively compiled on ubuntu-latest and macos-latest
-          - architecture: rtems
-            os: ubuntu-latest
-            platform: linux/amd64
+          # - architecture: rtems
+          #   os: ubuntu-latest
+          #   platform: linux/amd64
           - architecture: linux
             os: ubuntu-latest
             platform: linux/amd64
+          - architecture: linux
+            os: macos-latest
+            platform: linux/arm64
           # TO ENABLE MACOS: change the above platform to
           # platform: linux/amd64,linux/arm64
           # this causes buildx to use QEMU for arm64 emulation.
