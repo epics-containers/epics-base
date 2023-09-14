@@ -26,7 +26,7 @@ jobs:
             os: ubuntu-latest
             platform: linux/amd64
           - architecture: linux
-            os: macos-latest
+            os: macos-latest-xl
             platform: linux/arm64
           # TO ENABLE MACOS: change the above platform to
           # platform: linux/amd64,linux/arm64
