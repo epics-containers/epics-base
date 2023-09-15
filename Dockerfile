@@ -87,6 +87,15 @@ RUN git clone https://github.com/epics-base/epics-base.git -q --branch ${EPICS_V
 RUN bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc)
 
+# also build the sequencer as it is used by many support modules
+RUN wget https://github.com/ISISComputingGroup/EPICS-seq/archive/refs/tags/vendor_2_2_9.tar.gz && \
+    tar -xzf vendor*.tar.gz -C ${SUPPORT} && \
+    rm vendor*.tar.gz && \
+    mv ${SUPPORT}/EPICS-seq* ${SUPPORT}/sncseq && \
+    echo EPICS_BASE=${EPICS_BASE} > ${SUPPORT}/sncseq/configure/RELEASE
+RUN make -C ${SUPPORT}/sncseq -j $(nproc)
+
+
 # setup a global python venv and install ibek
 RUN python3 -m venv ${VIRTUALENV} && pip install ibek
 
