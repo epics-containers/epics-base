@@ -16,7 +16,9 @@ ENV EPICS_HOST_ARCH=linux-x86_64
 FROM base AS environment-arm64
 ENV EPICS_HOST_ARCH=linux-arm
 
-FROM environment-$TARGETARCH AS environment
+ENV TARGETARCH=${TARGETARCH}
+
+FROM environment-${TARGETARCH} AS environment
 
 ARG TARGET_ARCHITECTURE
 
@@ -64,7 +66,10 @@ FROM devtools AS developer-linux
 FROM devtools AS developer-rtems
 
 # pull in RTEMS toolchain
-COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+
+# TODO DISABLED FOR FASTER DEVELOPMENT OF linux changes (plus I run out of var space)
+# RTEMS Build approach is up for review
+# COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
 
 ##### shared build stage #######################################################
 
