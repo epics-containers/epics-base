@@ -1,0 +1,11 @@
+# Global configure/RELEASE file for epics-containers IOCs
+
+SUPPORT=/epics/support
+-include $(TOP)/configure/SUPPORT.$(EPICS_HOST_ARCH)
+-include $(TOP)/configure/EPICS_BASE
+-include $(TOP)/configure/EPICS_BASE.$(EPICS_HOST_ARCH)
+
+EPICS_BASE=/repos/epics/epics-base
+
+# Additional Support Modules will be added below this line
+

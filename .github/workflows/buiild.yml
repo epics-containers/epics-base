@@ -19,24 +19,20 @@ jobs:
         include:
           # rtems is cross compiled on ubuntu-latest
           # linux is natively compiled on ubuntu-latest and macos-latest
-          - architecture: rtems
-            os: ubuntu-latest
-            platform: linux/amd64
+
+          # enable below for RTEMS
+          # - architecture: rtems
+          #   os: ubuntu-latest
+          #   platform: linux/amd64
+
           - architecture: linux
             os: ubuntu-latest
             platform: linux/amd64
-          # TO ENABLE MACOS: change the above platform to
-          # platform: linux/amd64,linux/arm64
-          # this causes buildx to use QEMU for arm64 emulation.
-          # This will increase build time by 1 hour.
 
-          # MACOS is removed as it takes 3 hours. This is because there are no
-          # M1 macs in the github runners, so we still use QEMU to emulate
-          # but on an x86 mac. NOTE: once GHA starts to use M1 macs, this
-          # approach will be the FASTEST.
+          # enable below for MACOS native build on M1 macs
           # M1 Macs are coming!: https://github.com/github/roadmap/issues/528
           # - architecture: linux
-          #   os: macos-latest
+          #   os: macos-latest-x1
           #   platform: linux/arm64
     runs-on: ${{ matrix.os }}
 
