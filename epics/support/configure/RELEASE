@@ -5,7 +5,7 @@ SUPPORT=/epics/support
 -include $(TOP)/configure/EPICS_BASE
 -include $(TOP)/configure/EPICS_BASE.$(EPICS_HOST_ARCH)
 
-EPICS_BASE=/repos/epics/epics-base
+EPICS_BASE=/epics/epics-base
 
 # Additional Support Modules will be added below this line
 
