@@ -78,10 +78,6 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 # copy initial epics folder structure
 COPY epics /epics
 
-# prepare tools settings
-RUN git config --global advice.detachedHead false
-
-
 # get and build EPICS base
 RUN git clone https://github.com/epics-base/epics-base.git -q --branch ${EPICS_VERSION} --recursive ${EPICS_BASE}
 RUN bash /epics/scripts/patch-epics-base.sh
@@ -97,7 +93,7 @@ RUN make -C ${SUPPORT}/sncseq -j $(nproc)
 
 
 # setup a global python venv and install ibek
-RUN python3 -m venv ${VIRTUALENV} && pip install ibek
+RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.0.0
 
 ##### runtime preparation stage ################################################
 
