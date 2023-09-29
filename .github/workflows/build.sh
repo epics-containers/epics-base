@@ -18,27 +18,18 @@ ARCH=${ARCH:-linux}
 PUSH=${PUSH:-false}
 TAG=${TAG:-latest}
 REGISTRY=${REGISTRY:-ghcr.io}
-if [[ -z ${REPOSITORY} ]] ; then
-    # For local builds, infer the registry from git remote (assumes ghcr)
-    REPOSITORY=$(git remote -v | sed  "s/.*@github.com:\(.*\)\.git.*/ghcr.io\/\1/" | tail -1)
-    echo "inferred registry ${REPOSITORY}"
-fi
+
+set -xe
 
 NEWCACHE=${CACHE}-new
 
-if docker -v | grep podman ; then
-    # podman command line parameters (just use local cache)
-    cachefrom=""
-    cacheto=""
-else
-    # setup a buildx driver for multi-arch / remote cached builds
-    docker buildx create --driver docker-container --use
-    # docker command line parameters
-    cachefrom=--cache-from=type=local,src=${CACHE}
-    cacheto=--cache-to=type=local,dest=${NEWCACHE},mode=max
-fi
+# setup a buildx driver for multi-arch / remote cached builds
+docker buildx create --driver docker-container --use
 
-set -e
+# docker command line parameters
+cachefrom=--cache-from=type=local,src=${CACHE}
+cacheto=--cache-to=type=local,dest=${NEWCACHE},mode=max
+
 
 do_build() {
     ARCHITECTURE=$1
@@ -79,6 +70,6 @@ do_build() {
 # as every layer will get uploaded to the cache even if it just came out of the
 # cache.
 
-do_build ${ARCH} developer
-do_build ${ARCH} runtime
+do_build ${ARCH} developer ${cachefrom}
+do_build ${ARCH} runtime ${cachefrom} ${cacheto}
 

@@ -29,9 +29,9 @@ ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 ENV VIRTUALENV /venv
 ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
-ENV GLOBAL_RELEASE ${SUPPORT}/configure/RELEASE
 ENV IOC ${EPICS_ROOT}/ioc
 ENV RTEMS_TOP=/rtems
+
 ENV EPICS_VERSION=R7.0.7
 
 
@@ -43,6 +43,7 @@ FROM environment AS devtools
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     build-essential \
     busybox \
     git \
@@ -52,6 +53,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     re2c \
     rsync \
     ssh-client \
+    vim \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
@@ -84,24 +86,18 @@ RUN bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc)
 
 # also build the sequencer as it is used by many support modules
-RUN wget https://github.com/ISISComputingGroup/EPICS-seq/archive/refs/tags/vendor_2_2_9.tar.gz && \
-    tar -xzf vendor*.tar.gz -C ${SUPPORT} && \
-    rm vendor*.tar.gz && \
-    mv ${SUPPORT}/EPICS-seq* ${SUPPORT}/sncseq && \
-    echo EPICS_BASE=${EPICS_BASE} > ${SUPPORT}/sncseq/configure/RELEASE
+RUN bash /epics/scripts/get-sncseq.sh
 RUN make -C ${SUPPORT}/sncseq -j $(nproc)
 
-
 # setup a global python venv and install ibek
-RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.0.0
+RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.0
 
 ##### runtime preparation stage ################################################
 
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-WORKDIR /min_files
-RUN bash /epics/scripts/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
+RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv
 
 ##### runtime stage ############################################################
 
@@ -115,6 +111,5 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/*
 
 # add products from build stage
-COPY --from=runtime_prep /min_files /
-COPY --from=developer ${VIRTUALENV} ${VIRTUALENV}
+COPY --from=runtime_prep /assets /
 
