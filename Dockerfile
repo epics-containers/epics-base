@@ -90,7 +90,7 @@ RUN bash /epics/scripts/get-sncseq.sh
 RUN make -C ${SUPPORT}/sncseq -j $(nproc)
 
 # setup a global python venv and install ibek
-RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.0
+RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.3
 
 ##### runtime preparation stage ################################################
 
