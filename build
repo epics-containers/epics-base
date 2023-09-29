@@ -9,11 +9,11 @@ export TMPDIR=/tmp
 set -xe
 
 if [[ -z ${TARGET_ARCHITECTURE} || ${TARGET_ARCHITECTURE}=="linux" ]]; then
-podman buildx build --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-developer .
-podman buildx build --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-runtime .
+    podman buildx build --net host --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-developer:local .
+    podman buildx build --net host --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-runtime:local .
 fi
 
 if [[ ${TARGET_ARCHITECTURE}=="rtems" ]]; then
-podman buildx build --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-developer .
-podman buildx build --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-runtime .
+    podman buildx build --net host --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-developer:local .
+    podman buildx build --net host --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-runtime:local .
 fi
