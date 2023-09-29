@@ -43,6 +43,7 @@ FROM environment AS devtools
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     build-essential \
     busybox \
     git \
@@ -52,6 +53,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     re2c \
     rsync \
     ssh-client \
+    vim \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
@@ -93,15 +95,14 @@ RUN make -C ${SUPPORT}/sncseq -j $(nproc)
 
 
 # setup a global python venv and install ibek
-RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.0.0
+RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.0
 
 ##### runtime preparation stage ################################################
 
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-WORKDIR /min_files
-RUN bash /epics/scripts/minimize.sh ${EPICS_BASE} ${IOC} $(ls -d ${SUPPORT}/*/)
+RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv
 
 ##### runtime stage ############################################################
 
@@ -115,6 +116,5 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/*
 
 # add products from build stage
-COPY --from=runtime_prep /min_files /
-COPY --from=developer ${VIRTUALENV} ${VIRTUALENV}
+COPY --from=runtime_prep /assets /
 
