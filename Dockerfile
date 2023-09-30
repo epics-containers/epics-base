@@ -7,7 +7,6 @@
 #   TARGETARCH: the buildx platform: amd64 or arm64
 
 ARG TARGET_ARCHITECTURE
-ARG TARGETARCH
 
 FROM ubuntu:22.04 AS base
 
