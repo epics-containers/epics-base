@@ -10,6 +10,9 @@ ARG TARGET_ARCHITECTURE
 
 FROM ubuntu:22.04 AS base
 
+##### architecture stages ######################################################
+
+# use buildx target platform to determine the base image architecture
 FROM base AS environment-amd64
 ENV EPICS_HOST_ARCH=linux-x86_64
 
@@ -17,6 +20,8 @@ FROM base AS environment-arm64
 ENV EPICS_HOST_ARCH=linux-arm
 
 ENV TARGETARCH=${TARGETARCH}
+
+##### shared environment stage #################################################
 
 FROM environment-${TARGETARCH} AS environment
 
@@ -90,7 +95,7 @@ RUN bash /epics/scripts/get-sncseq.sh
 RUN make -C ${SUPPORT}/sncseq -j $(nproc)
 
 # setup a global python venv and install ibek
-RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.0
+RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.4
 
 ##### runtime preparation stage ################################################
 
