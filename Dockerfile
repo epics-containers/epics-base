@@ -52,6 +52,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     build-essential \
     busybox \
     git \
+    libreadline-dev \
     python3-minimal \
     python3-pip \
     python3-venv \
@@ -95,7 +96,8 @@ RUN bash /epics/scripts/get-sncseq.sh
 RUN make -C ${SUPPORT}/sncseq -j $(nproc)
 
 # setup a global python venv and install ibek
-RUN python3 -m venv ${VIRTUALENV} && pip install ibek==1.3.4
+COPY requirements.txt /requirements.txt
+RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
 
 ##### runtime preparation stage ################################################
 
@@ -112,6 +114,7 @@ FROM environment as runtime
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     libpython3-stdlib \
+    libreadline8 \
     python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
