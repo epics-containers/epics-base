@@ -4,7 +4,7 @@
 
 cd /tmp
 
-wget https://github.com/epics-containers/epics-base/raw/dev/vendor_2_2_9.tar.gz
+wget https://github.com/epics-containers/epics-base/raw/main/vendor_2_2_9.tar.gz
 tar -xzf vendor*.tar.gz -C ${SUPPORT}
 rm vendor*.tar.gz
 mv ${SUPPORT}/EPICS-seq* ${SUPPORT}/sncseq

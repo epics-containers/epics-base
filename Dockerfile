@@ -35,7 +35,6 @@ ENV VIRTUALENV /venv
 ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
-ENV RTEMS_TOP=/rtems6.1-rc2-beatnik-legacy/rtems/6.1-rc2/
 
 ENV EPICS_BASE_SRC=https://github.com/epics-base/epics-base
 ENV EPICS_VERSION=R7.0.8
@@ -74,11 +73,16 @@ FROM devtools AS developer-linux
 
 FROM devtools AS developer-rtems
 
-# pull in RTEMS toolchain
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-developer:main ${RTEMS_TOP} ${RTEMS_TOP}
-# clone from a fork while this is still under development
-ENV EPICS_BASE_SRCV=https://github.com/kiwichris/epics-base.git
+ENV RTEMS_VERSION=6.1-rc2
+ENV RTEMS_TOP_FOLDER=/rtems${RTEMS_VERSION}-beatnik-legacy
+ENV RTEMS_BASE=${RTEMS_TOP_FOLDER}/rtems/${RTEMS_VERSION}/
+
+# clone from a fork while this while EPICS rtems 6 is still under development
+ENV EPICS_BASE_SRC=https://github.com/kiwichris/epics-base.git
 ENV EPICS_VERSION=rtems-legacy-net-support
+
+# pull in RTEMS BSP
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-developer:6.2rc1 ${RTEMS_BASE} ${RTEMS_BASE}
 
 ##### shared build stage #######################################################
 

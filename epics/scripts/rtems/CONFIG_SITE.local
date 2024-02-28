@@ -7,7 +7,7 @@
 CROSS_COMPILER_TARGET_ARCHS=RTEMS-beatnik
 
 RTEMS_VERSION = 6
-RTEMS_BASE = /rtems6-beatnik-legacy/rtems/6.1-rc2
+# RTEMS_BASE = # Get this from Docker Environment settings - don't specify here
 RTEMS_LEGACY_STACK = YES
 
 USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
