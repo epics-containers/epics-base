@@ -11,53 +11,57 @@ jobs:
     permissions:
       contents: read
       packages: write
-    env:
-      CACHE: /tmp/.buildx-cache
     strategy:
       fail-fast: false
+      max-parallel: 8
       matrix:
+        target: [developer, runtime]
+        architecture: [linux, rtems]
         include:
-          # rtems is cross compiled on ubuntu-latest
-          # linux is natively compiled on ubuntu-latest and macos-latest
+          - os: ubuntu-latest
+            platforms: linux/amd64
 
-          # enable below for RTEMS
-          # - architecture: rtems
-          #   os: ubuntu-latest
-          #   platform: linux/amd64
-
-          - architecture: linux
-            os: ubuntu-latest
-            platform: linux/amd64
-
-          # enable below for MACOS native build on M1 macs
-          # M1 Macs are coming!: https://github.com/github/roadmap/issues/528
-          # - architecture: linux
-          #   os: macos-latest-x1
-          #   platform: linux/arm64
     runs-on: ${{ matrix.os }}
-
+    env:
+      TAG: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-${{ matrix.architecture }}-${{ matrix.target }}:${{ github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup docker (missing on MacOS)
-        if: runner.os == 'macos'
-        uses: docker-practice/actions-setup-docker@fd7ecdac7caf8e2c541a48c9bcc280aae59a8461
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Log in to GitHub Docker Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker Build Script
-        env:
-          REGISTRY: ghcr.io
-          ARCH: ${{ matrix.architecture }}
-          PLATFORM: ${{ matrix.platform }}
-          REPOSITORY: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-          PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
-          CACHE: ${{ env.CACHE }}
-        run: .github/workflows/build.sh
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platforms }}
+          target: ${{ matrix.target }}
+          build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
+          tags: ${{ env.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+
+      - name: Test image
+        run: echo "no tests yet"
+
+      - name: Push image
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platforms }}
+          target: ${{ matrix.target }}
+          build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
+          tags: ${{ env.TAG }}
+          push: true

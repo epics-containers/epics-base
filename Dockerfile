@@ -35,9 +35,10 @@ ENV VIRTUALENV /venv
 ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
-ENV RTEMS_TOP=/rtems
+ENV RTEMS_TOP=/rtems6.1-rc2-beatnik-legacy/rtems/6.1-rc2/
 
-ENV EPICS_VERSION=R7.0.7
+ENV EPICS_BASE_SRC=https://github.com/epics-base/epics-base
+ENV EPICS_VERSION=R7.0.8
 
 
 ##### developer / build stage ##################################################
@@ -74,10 +75,10 @@ FROM devtools AS developer-linux
 FROM devtools AS developer-rtems
 
 # pull in RTEMS toolchain
-
-# TODO DISABLED FOR FASTER DEVELOPMENT OF linux changes (plus I run out of var space)
-# RTEMS Build approach is up for review
-# COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc:main ${RTEMS_TOP} ${RTEMS_TOP}
+# clone from a fork while this is still under development
+ENV EPICS_BASE_SRCV=https://github.com/kiwichris/epics-base.git
+ENV EPICS_VERSION=rtems-legacy-net-support
 
 ##### shared build stage #######################################################
 
@@ -87,7 +88,7 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 COPY epics /epics
 
 # get and build EPICS base
-RUN git clone https://github.com/epics-base/epics-base.git -q --branch ${EPICS_VERSION} --recursive ${EPICS_BASE}
+RUN git clone ${EPICS_BASE_SRC} -q --branch ${EPICS_VERSION} --recursive ${EPICS_BASE}
 RUN bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc)
 
