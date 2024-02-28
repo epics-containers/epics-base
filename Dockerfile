@@ -81,8 +81,8 @@ ENV RTEMS_BASE=${RTEMS_TOP_FOLDER}/rtems/${RTEMS_VERSION}/
 ENV EPICS_BASE_SRC=https://github.com/kiwichris/epics-base.git
 ENV EPICS_VERSION=rtems-legacy-net-support
 
-# pull in RTEMS BSP
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-developer:6.2rc1 ${RTEMS_BASE} ${RTEMS_BASE}
+# pull in RTEMS BSP (stripped version because otherwise it is too large)
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1 ${RTEMS_BASE} ${RTEMS_BASE}
 
 ##### shared build stage #######################################################
 
@@ -110,6 +110,7 @@ FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
 RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv
+# TODO update ibek to delete x86 targets if building for rtems
 
 ##### runtime stage ############################################################
 
