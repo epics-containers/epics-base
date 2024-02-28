@@ -1,0 +1,35 @@
+# add required settings for VME RTEMS cross compilation
+
+# NOTE: all but the fist line of this really belong in os/CONFIGxxRTEMSxxx
+# But this container target ONLY builds RTEMS so we place all the
+# config here for simplicity and to avoid dirtying the repo.
+
+CROSS_COMPILER_TARGET_ARCHS=RTEMS-beatnik
+
+RTEMS_VERSION = 6
+RTEMS_BASE = /rtems6-beatnik-legacy/rtems/6.1-rc2
+RTEMS_LEGACY_STACK = YES
+
+USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
+
+ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+
+# TO BUILD IOCS FOR RTEMS ONLY e.g.
+#
+# TOP=../..
+# include $(TOP)/configure/CONFIG
+#
+# # Build an IOC support library
+# LIBRARY_rtems-beatnik = testSupport
+# LIBRARY = $(LIBRARY_$(T_A))
+#
+# # Compile and add the code to the support library
+# testSupport_SRCS += libA.c
+#
+# # Link the library to the EPICS Base libraries
+# testSupport_LIBS += $(EPICS_BASE_IOC_LIBS)
+#
+#
+# # Build the IOC application on linux-arm only
+# PROD_IOC_rtems-beatnik = test
+# PROD_IOC = $(PROD_IOC_$(T_A))
