@@ -75,7 +75,7 @@ FROM devtools AS developer-linux
 FROM devtools AS developer-rtems
 
 # pull in RTEMS toolchain
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc:main ${RTEMS_TOP} ${RTEMS_TOP}
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-developer:main ${RTEMS_TOP} ${RTEMS_TOP}
 # clone from a fork while this is still under development
 ENV EPICS_BASE_SRCV=https://github.com/kiwichris/epics-base.git
 ENV EPICS_VERSION=rtems-legacy-net-support
