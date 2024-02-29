@@ -7,6 +7,7 @@
 #   TARGETARCH: the buildx platform: amd64 or arm64
 
 ARG TARGET_ARCHITECTURE
+ARG TARGETARCH
 
 FROM ubuntu:22.04 AS base
 
@@ -80,10 +81,11 @@ ENV RTEMS_BASE=${RTEMS_TOP_FOLDER}/rtems/${RTEMS_VERSION}/
 
 # clone from a fork while this while EPICS rtems 6 is still under development
 ENV EPICS_BASE_SRC=https://github.com/kiwichris/epics-base.git
-ENV GIT_OPTS="--branch rtems-legacy-net-support"
+ENV GIT_OPTS="--branch rtems-legacy-net-support --recursive"
 
 # pull in RTEMS BSP from the GHCR
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.1rc2 ${RTEMS_BASE} ${RTEMS_BASE}
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.1rc2 \
+     ${RTEMS_BASE} ${RTEMS_BASE}
 
 ##### shared build stage #######################################################
 
