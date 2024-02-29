@@ -96,11 +96,11 @@ COPY epics /epics
 # get and build EPICS base
 RUN git clone ${EPICS_BASE_SRC} -q ${GIT_OPTS} ${EPICS_BASE} && \
     bash /epics/scripts/patch-epics-base.sh
-RUN make -C ${EPICS_BASE} -j $(nproc)
+RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
 # also build the sequencer as it is used by many support modules
 RUN bash /epics/scripts/get-sncseq.sh
-RUN make -C ${SUPPORT}/sncseq -j $(nproc)
+RUN make -C ${SUPPORT}/sncseq -j $(nproc); make -C ${SUPPORT}/sncseq clean
 
 # setup a global python venv and install ibek
 COPY requirements.txt /requirements.txt
