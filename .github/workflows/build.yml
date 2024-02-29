@@ -13,7 +13,6 @@ jobs:
       packages: write
     strategy:
       fail-fast: false
-      max-parallel: 2 # Parallelise the architectures but not the stages
       matrix:
         target: [developer, runtime]
         architecture: [linux, rtems]
