@@ -17,11 +17,16 @@ cd $(dirname ${0})
 # use docker if available else use podman
 if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 
+if ! $docker buildx version &>/dev/null; then
+    echo "buildx required. (install with 'apt install docker-buildx')"
+    exit 1
+fi
+
 # make sure new repos get their submodule ibek-support
 git submodule update --init
 
 # build and developer images
-$docker build --network host --target $TARGET \
+$docker buildx build --network host --target $TARGET \
         --build-arg TARGETARCH=amd64 \
         --build-arg TARGET_ARCHITECTURE=$T_A \
         -t ${TAG} .
