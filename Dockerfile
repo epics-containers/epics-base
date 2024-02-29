@@ -38,6 +38,7 @@ ENV IOC ${EPICS_ROOT}/ioc
 
 ENV EPICS_BASE_SRC=https://github.com/epics-base/epics-base
 ENV EPICS_VERSION=R7.0.8
+ENV GIT_OPTS="--branch ${EPICS_VERSION} --recursive"
 
 
 ##### developer / build stage ##################################################
@@ -79,10 +80,10 @@ ENV RTEMS_BASE=${RTEMS_TOP_FOLDER}/rtems/${RTEMS_VERSION}/
 
 # clone from a fork while this while EPICS rtems 6 is still under development
 ENV EPICS_BASE_SRC=https://github.com/kiwichris/epics-base.git
-ENV EPICS_VERSION=rtems-legacy-net-support
+ENV GIT_OPTS="--branch rtems-legacy-net-support"
 
-# pull in RTEMS BSP (stripped version because otherwise it is too large)
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1 ${RTEMS_BASE} ${RTEMS_BASE}
+# pull in RTEMS BSP from the GHCR
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.1rc2 ${RTEMS_BASE} ${RTEMS_BASE}
 
 ##### shared build stage #######################################################
 
@@ -92,8 +93,8 @@ FROM developer-${TARGET_ARCHITECTURE} AS developer
 COPY epics /epics
 
 # get and build EPICS base
-RUN git clone ${EPICS_BASE_SRC} -q --branch ${EPICS_VERSION} --recursive ${EPICS_BASE}
-RUN bash /epics/scripts/patch-epics-base.sh
+RUN git clone ${EPICS_BASE_SRC} -q ${GIT_OPTS} ${EPICS_BASE} && \
+    bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc)
 
 # also build the sequencer as it is used by many support modules
@@ -110,7 +111,7 @@ FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
 RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv
-# TODO update ibek to delete x86 targets if building for rtems
+RUN /epics/scripts/runtime-prep-epics-base.sh
 
 ##### runtime stage ############################################################
 
