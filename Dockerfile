@@ -7,7 +7,6 @@
 #   TARGETARCH: the buildx platform: amd64 or arm64
 
 ARG TARGET_ARCHITECTURE
-ARG TARGETARCH
 
 FROM ubuntu:22.04 AS base
 
@@ -112,8 +111,8 @@ RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv
-RUN /epics/scripts/runtime-prep-epics-base.sh
+RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv && \
+    bash /epics/scripts/runtime-prep-epics-base.sh
 
 ##### runtime stage ############################################################
 
