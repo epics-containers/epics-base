@@ -83,7 +83,7 @@ ENV EPICS_BASE_SRC=https://github.com/kiwichris/epics-base.git
 ENV GIT_OPTS="--branch rtems-legacy-net-support --recursive"
 
 # pull in RTEMS BSP from the GHCR
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.1rc2 \
+COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1ec1 \
      ${RTEMS_BASE} ${RTEMS_BASE}
 
 ##### shared build stage #######################################################

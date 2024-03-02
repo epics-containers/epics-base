@@ -26,7 +26,7 @@ fi
 git submodule update --init
 
 # build and developer images
-$docker buildx build --network host --target $TARGET \
+$docker buildx build --load --network host --target $TARGET \
         --build-arg TARGETARCH=amd64 \
         --build-arg TARGET_ARCHITECTURE=$T_A \
         -t ${TAG} .
