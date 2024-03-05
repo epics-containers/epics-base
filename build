@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# a script to locally build all targets using podman or docker
+################################################################################
+# generic local build script for epics-containers repositories                 #
+################################################################################
 
 # set TARGET_ARCHITECTURE to rtems for RTEMS based targets
 T_A=${TARGET_ARCHITECTURE:-linux}
@@ -9,24 +11,19 @@ TARGET=${TARGET:-developer}
 # set TAG to override the default tag
 TAG=${TAG:-ec_test}
 
-# log commands and stop on erros
+# log commands and stop on errors
 set -xe
 
 cd $(dirname ${0})
 
 # use docker if available else use podman
 if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
-
-if ! $docker buildx version &>/dev/null; then
-    echo "buildx required. (install with 'apt install docker-buildx')"
-    exit 1
-fi
+if $docker buildx version &>/dev/null; then builx=buildx; load=--load; fi
 
 # make sure new repos get their submodule ibek-support
-git submodule update --init
+if [ ! -d ibek-support ] ; then git submodule update --init ; fi
 
 # build and developer images
-$docker buildx build --load --network host --target $TARGET \
-        --build-arg TARGETARCH=amd64 \
-        --build-arg TARGET_ARCHITECTURE=$T_A \
-        -t ${TAG} .
+$docker build $buildx -t ${TAG} --build-arg \
+    TARGET_ARCHITECTURE=$T_A $load --target $TARGET .
+

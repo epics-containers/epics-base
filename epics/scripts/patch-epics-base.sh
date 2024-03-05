@@ -2,14 +2,13 @@
 
 THIS_DIR=$(dirname $(readlink -f $0))
 
-# don't compile tests - saving container space
-sed -i /epics/epics-base/modules/*/Makefile -e '/\+\= test/d'
-rm -r /epics/epics-base/modules/*/test*
+# comment out the test directories from the Makefile
+sed -i -E 's/(^[^#].*+= test.*$)/# \1/' \
+    /epics/epics-base/Makefile \
+    /epics/epics-base/modules/*/Makefile
 
 if [[ $TARGET_ARCHITECTURE == "rtems" ]]; then
-    echo "Configuring epics-base to build RTEMS beatnik only"
-
-    echo "VALID_BUILDS=Host" >> ${EPICS_BASE}/configure/CONFIG_SITE.Common.linux-x86_64
+    echo "Configuring epics-base to build RTEMS beatnik"
 
     cp ${THIS_DIR}/rtems/CONFIG_SITE.local ${EPICS_BASE}/configure/CONFIG_SITE.local
 fi
