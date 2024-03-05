@@ -98,11 +98,6 @@ RUN git clone ${EPICS_BASE_SRC} -q ${GIT_OPTS} ${EPICS_BASE} && \
     bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
-# also build the sequencer as it is used by many support modules
-RUN bash /epics/scripts/get-sncseq.sh
-RUN make -C ${SUPPORT}/sncseq -j $(nproc); make -C ${SUPPORT}/sncseq clean
-
-# setup a global python venv and install ibek
 COPY requirements.txt /requirements.txt
 RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
 
@@ -111,8 +106,7 @@ RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv && \
-    bash /epics/scripts/runtime-prep-epics-base.sh
+RUN ibek ioc extract-runtime-assets /assets --no-defaults /venv
 
 ##### runtime stage ############################################################
 
