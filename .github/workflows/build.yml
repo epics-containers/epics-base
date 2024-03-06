@@ -35,7 +35,7 @@ jobs:
             epics-host: linux-arm
             image_name: linux
             base_image: ubuntu:22.04
-            os: macos-latest-xlarge
+            os: macos-14-xlarge
             platform: linux/arm64
 
     runs-on: ${{ matrix.os }}
