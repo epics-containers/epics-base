@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Custom initialization goes here if needed.
+# Runs inside the dev container after the container is created
+
+################################################################################
+# When using docker we will not be root inside the container
+# the following steps are then required
+################################################################################
+
+if [[ $USER != "root" ]] ; then
+    # make sure the non-root user can build iocs and (mounted in) support modules
+    sudo chown -R ${USER}:${USER} /epics/ibek-defs /epics/pvi-defs /epics/support/configure /venv
+    sudo chown -h ${USER}:${USER} /epics /epics/ioc /epics/support
+fi
+
+################################################################################
+# Shell customizations for Generic IOC devcontainers
+################################################################################
+
+# add ibek completion to bash and zsh
+echo 'source <(ibek --show-completion bash)' >> $HOME/.bashrc
+echo 'source <(ibek --show-completion zsh)' >> $HOME/.zshrc
+
+# pick a theme that does not cause completion corruption in zsh
+sed -i $HOME/.zshrc -e 's/ZSH_THEME="devcontainers"/ZSH_THEME="dst"/'
+
+# allow personalization of all devcontainers in this subdirectory
+# by placing a .devcontainer_rc file in the workspace root
+if [[ -f /workspaces/.devcontainer_rc ]] ; then
+    source /workspaces/.devcontainer_rc
+fi

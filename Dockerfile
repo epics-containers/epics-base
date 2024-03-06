@@ -49,9 +49,6 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
-# TODO THIS WILL COME FROM THE RTEMS BASE IMAGE
-ENV RTEMS_BASE=rtems6.1-rc2-beatnik-legacy/rtems/6.1-rc2
-
 # get and build EPICS base
 COPY epics /epics
 RUN bash epics/scripts/get-base.sh && \
