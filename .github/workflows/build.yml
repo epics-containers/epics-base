@@ -50,7 +50,11 @@ jobs:
       - name: Setup docker for mac-os
         if: runner.os == 'macos'
         run: |
-          brew install docker
+          brew install docker;
+          while (! docker stats --no-stream ); do
+            echo "Waiting for Docker to launch...";
+            sleep 10;
+          done
 
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v3
