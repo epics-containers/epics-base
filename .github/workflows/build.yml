@@ -20,7 +20,7 @@ jobs:
           - epics-target: RTEMS-beatnik
             epics-host: linux-x86_64
             image_name: rtems-beatnik
-            base_image: ghcr.io/epics-containers/rtems-bsp:6.1rc2
+            base_image: ghcr.io/epics-containers/rtems-bsp-runtime:6.1rc2
             os: ubuntu-latest
             platform: linux/amd64
 
