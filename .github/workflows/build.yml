@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  build-push-images:
+  build:
     # pull requests are a duplicate of a branch push if within the same repo.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     permissions:
@@ -14,8 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [developer, runtime]
         epics-target: [RTEMS-beatnik, linux-x86_64, linux-arm]
+        target: [developer, runtime]
         include:
           - epics-target: RTEMS-beatnik
             epics-host: linux-x86_64
