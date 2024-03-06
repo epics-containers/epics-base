@@ -1,49 +1,34 @@
 # EPICS 7 Base Dockerfile
 
-##### shared environment stage #################################################
+#  build args
+#   TARGET_ARCHITECTURE: the epics cross compile target platform
+#     note that linux-x86_64 is shortened to linux and is the default
+#   EPICS_HOST_ARCH: the epics host architecture name
+#   BASE_IMAGE: can be used to bring in cross compilation tools
 
-# mandatory build args
-#   TARGET_ARCHITECTURE: the epics cross compile target platform: rtems or linux
-#   TARGETARCH: the buildx platform: amd64 or arm64
-
-ARG TARGET_ARCHITECTURE
-
-FROM ubuntu:22.04 AS base
-
-##### architecture stages ######################################################
-
-# use buildx target platform to determine the base image architecture
-FROM base AS environment-amd64
-ENV EPICS_HOST_ARCH=linux-x86_64
-
-FROM base AS environment-arm64
-ENV EPICS_HOST_ARCH=linux-arm
-
-ENV TARGETARCH=${TARGETARCH}
+ARG BASE_IMAGE=ubuntu:22.04
 
 ##### shared environment stage #################################################
+FROM ${BASE_IMAGE} AS environment
 
-FROM environment-${TARGETARCH} AS environment
-
-ARG TARGET_ARCHITECTURE
+ARG TARGET_ARCHITECTURE=linux-x86_64
+ARG EPICS_HOST_ARCH=linux-x86_64
 
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
+ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
-ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
-ENV VIRTUALENV /venv
-ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
+ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
-ENV EPICS_BASE_SRC=https://github.com/epics-base/epics-base
+ENV VIRTUALENV /venv
+ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
+
 ENV EPICS_VERSION=R7.0.8
-ENV GIT_OPTS="--branch ${EPICS_VERSION} --recursive"
 
-
-##### developer / build stage ##################################################
-
-FROM environment AS devtools
+##### developer stage ##########################################################
+FROM environment AS developer
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
@@ -64,37 +49,12 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
-##### unique developer setup for linux soft iocs ###############################
-
-FROM devtools AS developer-linux
-
-# nothing additional to do for linux
-
-##### unique developer setup for rtems iocs ####################################
-
-FROM devtools AS developer-rtems
-
-ENV RTEMS_VERSION=6.1-rc2
-ENV RTEMS_TOP_FOLDER=/rtems${RTEMS_VERSION}-beatnik-legacy
-ENV RTEMS_BASE=${RTEMS_TOP_FOLDER}/rtems/${RTEMS_VERSION}/
-
-# clone from a fork while this while EPICS rtems 6 is still under development
-ENV EPICS_BASE_SRC=https://github.com/kiwichris/epics-base.git
-ENV GIT_OPTS="--branch rtems-legacy-net-support --recursive"
-
-# pull in RTEMS BSP from the GHCR
-COPY --from=ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1ec1 \
-     ${RTEMS_BASE} ${RTEMS_BASE}
-
-##### shared build stage #######################################################
-
-FROM developer-${TARGET_ARCHITECTURE} AS developer
-
-# copy initial epics folder structure
-COPY epics /epics
+# TODO THIS WILL COME FROM THE RTEMS BASE IMAGE
+ENV RTEMS_BASE=rtems6.1-rc2-beatnik-legacy/rtems/6.1-rc2
 
 # get and build EPICS base
-RUN git clone ${EPICS_BASE_SRC} -q ${GIT_OPTS} ${EPICS_BASE} && \
+COPY epics /epics
+RUN bash epics/scripts/get-base.sh && \
     bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
@@ -102,14 +62,12 @@ COPY requirements.txt /requirements.txt
 RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
 
 ##### runtime preparation stage ################################################
-
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
 RUN ibek ioc extract-runtime-assets /assets --no-defaults /venv
 
 ##### runtime stage ############################################################
-
 FROM environment as runtime
 
 # add runtime system dependencies

@@ -15,14 +15,30 @@ jobs:
       fail-fast: false
       matrix:
         target: [developer, runtime]
-        architecture: [linux, rtems]
+        base_image: [ubuntu:22.04]
         include:
-          - os: ubuntu-latest
-            platforms: linux/amd64
+          - epics-target: RTEMS-beatnik
+            epics-host: linux-x86_64
+            image_name: rtems-beatnik
+            base_image: ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1ec1
+            os: ubuntu-latest
+            platform: linux/amd64
+
+          - epics-target: linux-x86_64
+            epics-host: linux-x86_64
+            image_name: linux
+            os: ubuntu-latest
+            platform: linux/amd64
+
+          - epics-target: linux-arm
+            epics-host: linux-arm
+            image_name: linux
+            os: macos-latest-x1
+            platform: linux/arm64
 
     runs-on: ${{ matrix.os }}
     env:
-      TAG: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-${{ matrix.architecture }}-${{ matrix.target }}:${{ github.ref_name }}
+      TAG: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-${{  matrix.image_name }}-${{ matrix.target }}:${{ github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -43,24 +59,27 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ matrix.platforms }}
+          platform: ${{ matrix.platform }}
           target: ${{ matrix.target }}
-          build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
+          build-args: |
+            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_HOST_ARCH=${{ matrix.epics-host }}
+            BASE_IMAGE=${{ matrix.base_image }}
           tags: ${{ env.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           load: true
-
-      - name: Test image
-        run: echo "no tests yet"
 
       - name: Push image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ matrix.platforms }}
+          platform: ${{ matrix.platform }}
           target: ${{ matrix.target }}
-          build-args: TARGET_ARCHITECTURE=${{ matrix.architecture }}
+          build-args: |
+            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_HOST_ARCH=${{ matrix.epics-host }}
+            BASE_IMAGE=${{ matrix.base_image }}
           tags: ${{ env.TAG }}
           push: true
