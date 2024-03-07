@@ -72,8 +72,8 @@ jobs:
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
           tags: ${{ env.TAG }}
-          cache-from: type=gha,scope=${{ matrix.target }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+          cache-from: type=gha,scope=${{ matrix.epics-target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
           load: true
 
       - name: Push image
