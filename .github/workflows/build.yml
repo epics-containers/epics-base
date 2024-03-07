@@ -35,7 +35,7 @@ jobs:
             epics-host: linux-arm
             image_name: linux
             base_image: ubuntu:22.04
-            os: macos-14-xlarge
+            os: macos-12-xl
             platform: linux/arm64
 
     runs-on: ${{ matrix.os }}
@@ -47,13 +47,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup docker for mac-os
+
+      - name: Setup docker (missing on MacOS)
         if: runner.os == 'macos'
-        run: |
-          brew install colima
-          colima version
-          brew install docker
-          colima start --cpu 3 --memory 6 --disk 100 --vm-type=qemu --mount-type=sshfs --dns=1.1.1.1
+        uses: docker-practice/actions-setup-docker@fd7ecdac7caf8e2c541a48c9bcc280aae59a8461
 
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v3
