@@ -1,19 +1,39 @@
 #!/bin/bash
 
-# a script to locally build all targets containers for this IOC using podman
+################################################################################
+# generic local build script for epics-containers repositories                 #
+################################################################################
 
-THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-cd ${THIS_DIR}
+# set TARGET_ARCHITECTURE to rtems for RTEMS based targets
+T_A=${TARGET_ARCHITECTURE:-linux_x86_64}
+# set TARGET to runtime for runtime images
+TARGET=${TARGET:-developer}
+# set TAG to override the default tag
+TAG=${TAG:-ec_test}
 
-export TMPDIR=/tmp
+if [ "$T_A" = "RTEMS-beatnik" ]; then
+    base="ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1ec2b2"
+else
+    base="ubuntu:22.04"
+fi
+
+# log commands and stop on errors
 set -xe
 
-if [[ -z ${TARGET_ARCHITECTURE} || ${TARGET_ARCHITECTURE}=="linux" ]]; then
-    podman buildx build --net host --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-developer:local .
-    podman buildx build --net host --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=linux -t epics-base-linux-runtime:local .
-fi
+cd $(dirname ${0})
 
-if [[ ${TARGET_ARCHITECTURE}=="rtems" ]]; then
-    podman buildx build --net host --target developer --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-developer:local .
-    podman buildx build --net host --target runtime --build-arg TARGETARCH=amd64 --build-arg TARGET_ARCHITECTURE=rtems -t epics-base-rtems-runtime:local .
-fi
+# use docker if available else use podman
+if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
+if $docker buildx version &>/dev/null; then builx=buildx; load=--load; fi
+
+# make sure new repos get their submodule ibek-support
+if [ ! -d ibek-support ] ; then git submodule update --init ; fi
+
+# build and developer images
+set -x
+$docker build $buildx -t ${TAG} \
+    --build-arg TARGET_ARCHITECTURE=$T_A \
+    --build-arg BASE_IMAGE=$base \
+    "${@}" \
+    $load --target $TARGET .
+

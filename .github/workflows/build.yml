@@ -5,59 +5,87 @@ on:
   pull_request:
 
 jobs:
-  build-push-images:
+  build:
     # pull requests are a duplicate of a branch push if within the same repo.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     permissions:
       contents: read
       packages: write
-    env:
-      CACHE: /tmp/.buildx-cache
     strategy:
       fail-fast: false
       matrix:
+        epics-target: [RTEMS-beatnik, linux-x86_64, linux-arm]
+        target: [developer, runtime]
         include:
-          # rtems is cross compiled on ubuntu-latest
-          # linux is natively compiled on ubuntu-latest and macos-latest
-
-          # enable below for RTEMS
-          # - architecture: rtems
-          #   os: ubuntu-latest
-          #   platform: linux/amd64
-
-          - architecture: linux
+          - epics-target: RTEMS-beatnik
+            epics-host: linux-x86_64
+            image_name: rtems-beatnik
+            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
             os: ubuntu-latest
             platform: linux/amd64
 
-          # enable below for MACOS native build on M1 macs
-          # M1 Macs are coming!: https://github.com/github/roadmap/issues/528
-          # - architecture: linux
-          #   os: macos-latest-x1
-          #   platform: linux/arm64
-    runs-on: ${{ matrix.os }}
+          - epics-target: linux-x86_64
+            epics-host: linux-x86_64
+            image_name: linux
+            base_image: ubuntu:22.04
+            os: ubuntu-latest
+            platform: linux/amd64
 
+          - epics-target: linux-arm
+            epics-host: linux-arm
+            image_name: linux
+            base_image: ubuntu:22.04
+            os: ubuntu-latest
+            platform: linux/arm64
+
+    runs-on: ${{ matrix.os }}
+    env:
+      TAG: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-${{  matrix.image_name }}-${{ matrix.target }}:${{ github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup docker (missing on MacOS)
-        if: runner.os == 'macos'
-        uses: docker-practice/actions-setup-docker@fd7ecdac7caf8e2c541a48c9bcc280aae59a8461
+        with:
+          submodules: recursive
+          fetch-depth: 1
 
       - name: Log in to GitHub Docker Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker Build Script
-        env:
-          REGISTRY: ghcr.io
-          ARCH: ${{ matrix.architecture }}
-          PLATFORM: ${{ matrix.platform }}
-          REPOSITORY: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-          PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
-          CACHE: ${{ env.CACHE }}
-        run: .github/workflows/build.sh
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          target: ${{ matrix.target }}
+          build-args: |
+            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_HOST_ARCH=${{ matrix.epics-host }}
+            BASE_IMAGE=${{ matrix.base_image }}
+          tags: ${{ env.TAG }}
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+          load: true
+
+      - name: Push image
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          target: ${{ matrix.target }}
+          build-args: |
+            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_HOST_ARCH=${{ matrix.epics-host }}
+            BASE_IMAGE=${{ matrix.base_image }}
+          tags: ${{ env.TAG }}
+          push: true

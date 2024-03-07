@@ -2,17 +2,13 @@
 
 THIS_DIR=$(dirname $(readlink -f $0))
 
-if [[ $TARGET_ARCHITECTURE == "rtems" ]]; then
-    echo "Patching RTEMS epics-base"
+# comment out the test directories from the Makefile
+sed -i -E 's/(^[^#].*+= test.*$)/# \1/' \
+    /epics/epics-base/Makefile \
+    /epics/epics-base/modules/*/Makefile
 
-    RTEMS_KERNEL=${RTEMS_TOP}/rtems
-    RTEMS_TOOLCHAIN=${RTEMS_TOP}/toolchain
+if [[ $TARGET_ARCHITECTURE == "RTEMS-beatnik" ]]; then
+    echo "Configuring epics-base to build RTEMS beatnik"
 
-    cd ${EPICS_ROOT}/epics-base
-    patch -p1 < ${THIS_DIR}/rtems-epics-base.patch
-    echo "RTEMS_KERNEL = ${RTEMS_KERNEL}" >> configure/CONFIG_SITE.local
-    echo "RTEMS_TOOLCHAIN = ${RTEMS_TOOLCHAIN}" >> configure/CONFIG_SITE.local
-    cat configure/CONFIG_SITE.local
-else
-    echo "No epics-base patch required for architecture <$TARGET_ARCHITECTURE>"
+    cp ${THIS_DIR}/rtems/CONFIG_SITE.local ${EPICS_BASE}/configure/CONFIG_SITE.local
 fi

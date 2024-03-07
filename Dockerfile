@@ -1,48 +1,34 @@
 # EPICS 7 Base Dockerfile
 
-##### shared environment stage #################################################
+#  build args
+#   TARGET_ARCHITECTURE: the epics cross compile target platform
+#     note that linux-x86_64 is shortened to linux and is the default
+#   EPICS_HOST_ARCH: the epics host architecture name
+#   BASE_IMAGE: can be used to bring in cross compilation tools
 
-# mandatory build args
-#   TARGET_ARCHITECTURE: the epics cross compile target platform: rtems or linux
-#   TARGETARCH: the buildx platform: amd64 or arm64
-
-ARG TARGET_ARCHITECTURE
-
-FROM ubuntu:22.04 AS base
-
-##### architecture stages ######################################################
-
-# use buildx target platform to determine the base image architecture
-FROM base AS environment-amd64
-ENV EPICS_HOST_ARCH=linux-x86_64
-
-FROM base AS environment-arm64
-ENV EPICS_HOST_ARCH=linux-arm
-
-ENV TARGETARCH=${TARGETARCH}
+ARG BASE_IMAGE=ubuntu:22.04
 
 ##### shared environment stage #################################################
+FROM ${BASE_IMAGE} AS environment
 
-FROM environment-${TARGETARCH} AS environment
-
-ARG TARGET_ARCHITECTURE
+ARG TARGET_ARCHITECTURE=linux-x86_64
+ARG EPICS_HOST_ARCH=linux-x86_64
 
 ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
+ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
-ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
-ENV VIRTUALENV /venv
-ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
-ENV RTEMS_TOP=/rtems
+ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
-ENV EPICS_VERSION=R7.0.7
+ENV VIRTUALENV /venv
+ENV PATH=${VIRTUALENV}/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 
+ENV EPICS_VERSION=R7.0.8
 
-##### developer / build stage ##################################################
-
-FROM environment AS devtools
+##### developer stage ##########################################################
+FROM environment AS developer
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
@@ -63,51 +49,22 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && rm -rf /var/lib/apt/lists/* \
     && busybox --install
 
-##### unique developer setup for linux soft iocs ###############################
-
-FROM devtools AS developer-linux
-
-# nothing additional to do for linux
-
-##### unique developer setup for rtems iocs ####################################
-
-FROM devtools AS developer-rtems
-
-# pull in RTEMS toolchain
-
-# TODO DISABLED FOR FASTER DEVELOPMENT OF linux changes (plus I run out of var space)
-# RTEMS Build approach is up for review
-# COPY --from=ghcr.io/epics-containers/rtems-powerpc:1.0.0 ${RTEMS_TOP} ${RTEMS_TOP}
-
-##### shared build stage #######################################################
-
-FROM developer-${TARGET_ARCHITECTURE} AS developer
-
-# copy initial epics folder structure
-COPY epics /epics
-
 # get and build EPICS base
-RUN git clone https://github.com/epics-base/epics-base.git -q --branch ${EPICS_VERSION} --recursive ${EPICS_BASE}
-RUN bash /epics/scripts/patch-epics-base.sh
-RUN make -C ${EPICS_BASE} -j $(nproc)
+COPY epics /epics
+RUN bash epics/scripts/get-base.sh && \
+    bash /epics/scripts/patch-epics-base.sh
+RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
-# also build the sequencer as it is used by many support modules
-RUN bash /epics/scripts/get-sncseq.sh
-RUN make -C ${SUPPORT}/sncseq -j $(nproc)
-
-# setup a global python venv and install ibek
 COPY requirements.txt /requirements.txt
 RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
 
 ##### runtime preparation stage ################################################
-
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-RUN ibek ioc extract-runtime-assets /assets --no-defaults --extras /venv
+RUN ibek ioc extract-runtime-assets /assets --no-defaults /venv
 
 ##### runtime stage ############################################################
-
 FROM environment as runtime
 
 # add runtime system dependencies
