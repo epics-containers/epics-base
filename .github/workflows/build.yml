@@ -71,10 +71,9 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
           cache-from: type=gha,scope=${{ matrix.epics-target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
-          load: true
+          outputs: type=image,name=${{ env.TAG }},push-by-digest=true,name-canonical=true,load=true
 
       - name: Push image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
@@ -87,5 +86,4 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
-          push: true
+          outputs: type=image,name=${{ env.TAG }},push-by-digest=true,name-canonical=true,push=true
