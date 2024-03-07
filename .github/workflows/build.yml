@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        epics-target: [RTEMS-beatnik, linux-x86_64, linux-arm]
+        epics-target: [RTEMS-beatnik, linux-x86_64 ] #, linux-arm
         target: [developer, runtime]
         include:
           - epics-target: RTEMS-beatnik
@@ -31,12 +31,12 @@ jobs:
             os: ubuntu-latest
             platform: linux/amd64
 
-          - epics-target: linux-arm
-            epics-host: linux-arm
-            image_name: linux
-            base_image: ubuntu:22.04
-            os: ubuntu-latest
-            platform: linux/arm64
+          # - epics-target: linux-arm
+          #   epics-host: linux-arm
+          #   image_name: linux
+          #   base_image: ubuntu:22.04
+          #   os: ubuntu-latest
+          #   platform: linux/arm64
 
     runs-on: ${{ matrix.os }}
     env:
@@ -61,6 +61,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+
       - name: Build image
         uses: docker/build-push-action@v5
         with:
@@ -71,9 +72,10 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
+          tags: ${{ env.TAG }}
           cache-from: type=gha,scope=${{ matrix.epics-target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
-          outputs: type=image,name=${{ env.TAG }},push-by-digest=true,name-canonical=true,load=true
+          load: true
 
       - name: Push image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
@@ -86,4 +88,5 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          outputs: type=image,name=${{ env.TAG }},push-by-digest=true,name-canonical=true,push=true
+          tags: ${{ env.TAG }}
+          push: true
