@@ -14,33 +14,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        epics-target: [RTEMS-beatnik, linux-x86_64 ] #, linux-arm
+        epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
         target: [developer, runtime]
+        base_image: [ubuntu:22.04]
+        os: [ubuntu-latest]
+        name: [epics-base]
         include:
           - epics-target: RTEMS-beatnik
             epics-host: linux-x86_64
-            image_name: rtems-beatnik
+            name: epics-base-rtems-beatnik
             base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
-            os: ubuntu-latest
             platform: linux/amd64
 
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
-            image_name: linux
-            base_image: ubuntu:22.04
-            os: ubuntu-latest
             platform: linux/amd64
 
-          # - epics-target: linux-arm
-          #   epics-host: linux-arm
-          #   image_name: linux
-          #   base_image: ubuntu:22.04
-          #   os: ubuntu-latest
-          #   platform: linux/arm64
+          - epics-target: linux-aarch64
+            epics-host: linux-aarch64
+            platform: linux/arm64
 
     runs-on: ${{ matrix.os }}
     env:
-      TAG: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-${{  matrix.image_name }}-${{ matrix.target }}:${{ github.ref_name }}
+      TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}-${{ matrix.target }}:${{ github.ref_name }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
