@@ -16,23 +16,28 @@ jobs:
       matrix:
         epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
         target: [developer, runtime]
-        base_image: [ubuntu:22.04]
-        os: [ubuntu-latest]
-        name: [epics-base]
         include:
           - epics-target: RTEMS-beatnik
             epics-host: linux-x86_64
             name: epics-base-rtems-beatnik
             base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
             platform: linux/amd64
+            os: ubuntu-latest
 
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
+            name: epics-base
+            base_image: ubuntu:22.04
             platform: linux/amd64
+            os: ubuntu-latest
 
           - epics-target: linux-aarch64
             epics-host: linux-aarch64
+            # a temporary name until multi-arch is supported
+            name: epics-base-native-aarch64
+            base_image: ubuntu:22.04
             platform: linux/arm64
+            os: ubuntu-latest
 
     runs-on: ${{ matrix.os }}
     env:
