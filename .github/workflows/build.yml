@@ -16,28 +16,25 @@ jobs:
       matrix:
         epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
         target: [developer, runtime]
+        os: [ubuntu-latest]
         include:
           - epics-target: RTEMS-beatnik
             epics-host: linux-x86_64
             name: epics-base-rtems-beatnik
             base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
             platform: linux/amd64
-            os: ubuntu-latest
 
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
             name: epics-base
             base_image: ubuntu:22.04
             platform: linux/amd64
-            os: ubuntu-latest
 
           - epics-target: linux-aarch64
-            epics-host: linux-aarch64
-            # a temporary name until multi-arch is supported
-            name: epics-base-native-aarch64
+            epics-host: linux-x86_64
+            name: epics-base-aarch64
             base_image: ubuntu:22.04
-            platform: linux/arm64
-            os: ubuntu-latest
+            platform: linux/amd64
 
     runs-on: ${{ matrix.os }}
     env:
@@ -57,12 +54,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
 
       - name: Build image
         uses: docker/build-push-action@v5
