@@ -5,11 +5,12 @@
         "dockerfile": "../Dockerfile",
         "target": "developer",
         "args": {
-            //"TARGET_ARCHITECTURE": "RTEMS-beatnik",
+            // Native target development settings ==============================
             "TARGET_ARCHITECTURE": "linux-x86_64",
-            "EPICS_HOST_ARCH": "linux-x86_64",
-            // "BASE_IMAGE": "ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1ec2b2"
             "BASE_IMAGE": "ubuntu:22.04"
+            // Local cross compilation settings ================================
+            // "TARGET_ARCHITECTURE": "RTEMS-beatnik",
+            // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2"
         }
     },
     "remoteEnv": {
