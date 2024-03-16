@@ -36,6 +36,11 @@ jobs:
             base_image: ubuntu:22.04
             platform: linux/amd64
 
+        exclude:
+          # only native images need a runtime target
+          - epics-target: RTEMS-beatnik
+            target: runtime
+
     runs-on: ${{ matrix.os }}
     env:
       TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}-${{ matrix.target }}:${{ github.ref_name }}
