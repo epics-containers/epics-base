@@ -4,6 +4,8 @@
 # generic local build script for epics-containers repositories                 #
 ################################################################################
 
+set -e
+
 # set TARGET_ARCHITECTURE to rtems for RTEMS based targets
 T_A=${TARGET_ARCHITECTURE:-linux_x86_64}
 # set TARGET to runtime for runtime images
@@ -12,28 +14,24 @@ TARGET=${TARGET:-developer}
 TAG=${TAG:-ec_test}
 
 if [ "$T_A" = "RTEMS-beatnik" ]; then
-    base="ghcr.io/epics-containers/rtems6-powerpc-linux-runtime:6.2rc1ec2b2"
+    base="ghcr.io/epics-containers/rtems-beatnik-runtime"
 else
     base="ubuntu:22.04"
 fi
-
-# log commands and stop on errors
-set -xe
 
 cd $(dirname ${0})
 
 # use docker if available else use podman
 if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
-if $docker buildx version &>/dev/null; then builx=buildx; load=--load; fi
+if $docker buildx version &>/dev/null; then builx=buildx; load='--load --progress=plain'; fi
 
 # make sure new repos get their submodule ibek-support
 if [ ! -d ibek-support ] ; then git submodule update --init ; fi
 
 # build and developer images
 set -x
-$docker build $buildx -t ${TAG} \
+$docker build $buildx -t ${TAG} "${@}" $load \
     --build-arg TARGET_ARCHITECTURE=$T_A \
     --build-arg BASE_IMAGE=$base \
-    "${@}" \
-    $load --target $TARGET .
+    --target $TARGET .
 

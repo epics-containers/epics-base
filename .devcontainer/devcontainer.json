@@ -10,7 +10,7 @@
             "BASE_IMAGE": "ubuntu:22.04"
             // Local cross compilation settings ================================
             // "TARGET_ARCHITECTURE": "RTEMS-beatnik",
-            // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2"
+            // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime"
         }
     },
     "remoteEnv": {
