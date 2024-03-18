@@ -6,8 +6,8 @@
 
 set -e
 
-# set TARGET_ARCHITECTURE to rtems for RTEMS based targets
-T_A=${TARGET_ARCHITECTURE:-linux_x86_64}
+# set EPICS_TARGET_ARCH to rtems for RTEMS based targets
+T_A=${EPICS_TARGET_ARCH:-linux_x86_64}
 # set TARGET to runtime for runtime images
 TARGET=${TARGET:-developer}
 # set TAG to override the default tag
@@ -31,7 +31,7 @@ if [ ! -d ibek-support ] ; then git submodule update --init ; fi
 # build and developer images
 set -x
 $docker build $buildx -t ${TAG} "${@}" $load \
-    --build-arg TARGET_ARCHITECTURE=$T_A \
+    --build-arg EPICS_TARGET_ARCH=$T_A \
     --build-arg BASE_IMAGE=$base \
     --target $TARGET .
 

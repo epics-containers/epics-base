@@ -6,10 +6,10 @@
         "target": "developer",
         "args": {
             // Native target development settings ==============================
-            "TARGET_ARCHITECTURE": "linux-x86_64",
+            "EPICS_TARGET_ARCH": "linux-x86_64",
             "BASE_IMAGE": "ubuntu:22.04"
             // Local cross compilation settings ================================
-            // "TARGET_ARCHITECTURE": "RTEMS-beatnik",
+            // "EPICS_TARGET_ARCH": "RTEMS-beatnik",
             // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime"
         }
     },

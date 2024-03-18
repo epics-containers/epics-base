@@ -1,7 +1,7 @@
 # EPICS 7 Base Dockerfile
 
 #  build args
-#   TARGET_ARCHITECTURE: the epics cross compile target platform
+#   EPICS_TARGET_ARCH: the epics cross compile target platform
 #     note that linux-x86_64 is shortened to linux and is the default
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools
@@ -11,10 +11,10 @@ ARG BASE_IMAGE=ubuntu:22.04
 ##### shared environment stage #################################################
 FROM ${BASE_IMAGE} AS environment
 
-ARG TARGET_ARCHITECTURE=linux-x86_64
+ARG EPICS_TARGET_ARCH=linux-x86_64
 ARG EPICS_HOST_ARCH=linux-x86_64
 
-ENV TARGET_ARCHITECTURE=${TARGET_ARCHITECTURE}
+ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
