@@ -55,14 +55,14 @@ RUN bash epics/scripts/get-base.sh && \
     bash /epics/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
-COPY requirements.txt /requirements.txt
-RUN python3 -m venv ${VIRTUALENV} && pip install -r /requirements.txt
+# create a virtual environment to be used by IOCs to install ibek
+RUN python3 -m venv ${VIRTUALENV}
 
 ##### runtime preparation stage ################################################
 FROM developer AS runtime_prep
 
 # get the products from the build stage and reduce to runtime assets only
-RUN ibek ioc extract-runtime-assets /assets --no-defaults /venv
+RUN bash epics/scripts/move_runtime.sh /assets
 
 ##### runtime stage ############################################################
 FROM environment as runtime
