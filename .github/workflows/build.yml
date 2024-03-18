@@ -40,7 +40,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}-${{ matrix.target }}:${{ github.ref_name }}
+      TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
 
     steps:
       - name: Checkout
@@ -69,7 +69,6 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
           cache-from: type=gha,scope=${{ matrix.epics-target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
           load: true
@@ -85,7 +84,7 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
+          tags: ${{ env.TAG }}-developer:${{ github.ref_name }}
           push: true
 
       - name: Push runtime image
@@ -99,5 +98,5 @@ jobs:
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
+          tags: ${{ env.TAG }}-runtime:${{ github.ref_name }}
           push: true
