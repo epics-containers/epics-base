@@ -15,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
-        target: [developer, runtime]
         os: [ubuntu-latest]
         include:
           - epics-target: RTEMS-beatnik
@@ -23,22 +22,20 @@ jobs:
             name: epics-base-rtems-beatnik
             base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
             platform: linux/amd64
+            target: developer
 
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
             name: epics-base
             base_image: ubuntu:22.04
             platform: linux/amd64
+            target: runtime
 
           - epics-target: linux-aarch64
             epics-host: linux-x86_64
             name: epics-base-aarch64
             base_image: ubuntu:22.04
             platform: linux/amd64
-
-        exclude:
-          # only native images need a runtime target
-          - epics-target: RTEMS-beatnik
             target: runtime
 
     runs-on: ${{ matrix.os }}
@@ -77,13 +74,27 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
           load: true
 
-      - name: Push image
+      - name: Push developer image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{ matrix.platform }}
-          target: ${{ matrix.target }}
+          target: developer
+          build-args: |
+            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_HOST_ARCH=${{ matrix.epics-host }}
+            BASE_IMAGE=${{ matrix.base_image }}
+          tags: ${{ env.TAG }}
+          push: true
+
+      - name: Push runtime image
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && matrix.target == 'runtime'}}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          target: runtime
           build-args: |
             TARGET_ARCHITECTURE=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
