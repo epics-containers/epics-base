@@ -70,10 +70,8 @@ FROM environment as runtime
 # add runtime system dependencies
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    ca-certificates \
     libpython3-stdlib \
     libreadline8 \
-    python3-distutils \
     python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
