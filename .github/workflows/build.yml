@@ -24,7 +24,6 @@ jobs:
             name: epics-base
             base_image: ubuntu:22.04
             platform: linux/amd64
-            target: runtime
 
           # cross compile for RTEMS to VME5500 (power pc beatnik)
           - epics-target: RTEMS-beatnik
@@ -32,7 +31,6 @@ jobs:
             name: epics-base-rtems-beatnik
             base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
             platform: linux/amd64
-            target: developer
 
           # cross compile to arm64
           - epics-target: linux-aarch64
@@ -40,19 +38,12 @@ jobs:
             name: epics-base-aarch64
             base_image: ubuntu:22.04
             platform: linux/amd64
-            target: runtime
 
     runs-on: ${{ matrix.os }}
     env:
       TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
-
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v3
         with:
@@ -66,9 +57,8 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v5
         with:
-          context: .
           platforms: ${{ matrix.platform }}
-          target: ${{ matrix.target }}
+          target: runtime
           build-args: |
             EPICS_TARGET_ARCH=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
@@ -81,7 +71,6 @@ jobs:
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v5
         with:
-          context: .
           platforms: ${{ matrix.platform }}
           target: developer
           build-args: |
@@ -92,10 +81,9 @@ jobs:
           push: true
 
       - name: Push runtime image
-        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && matrix.target == 'runtime'}}
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v5
         with:
-          context: .
           platforms: ${{ matrix.platform }}
           target: runtime
           build-args: |
