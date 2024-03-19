@@ -15,15 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
-        os: [ubuntu-latest]
         include:
-          - epics-target: RTEMS-beatnik
-            epics-host: linux-x86_64
-            name: epics-base-rtems-beatnik
-            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
-            platform: linux/amd64
-            target: developer
+          - os: ubuntu-latest # everyone is on os-latest
 
+          # native linux compile
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
             name: epics-base
@@ -31,6 +26,15 @@ jobs:
             platform: linux/amd64
             target: runtime
 
+          # cross compile for RTEMS to VME5500 (power pc beatnik)
+          - epics-target: RTEMS-beatnik
+            epics-host: linux-x86_64
+            name: epics-base-rtems-beatnik
+            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
+            platform: linux/amd64
+            target: developer
+
+          # cross compile to arm64
           - epics-target: linux-aarch64
             epics-host: linux-x86_64
             name: epics-base-aarch64
