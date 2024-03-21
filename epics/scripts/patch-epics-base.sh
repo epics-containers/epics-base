@@ -7,11 +7,11 @@ sed -i -E 's/(^[^#].*+= test.*$)/# \1/' \
     /epics/epics-base/Makefile \
     /epics/epics-base/modules/*/Makefile
 
-if [[ $EPICS_TARGET_ARCH == "RTEMS-beatnik" ]]; then
+if [[ ${EPICS_TARGET_ARCH} == "RTEMS-beatnik" ]]; then
     echo "Configuring epics-base to build RTEMS beatnik"
 
     cp ${THIS_DIR}/rtems/CONFIG_SITE.local ${EPICS_BASE}/configure/CONFIG_SITE.local
-elif [[ $EPICS_TARGET_ARCH != "linux-x86_64" ]]; then
+elif [[ ${EPICS_TARGET_ARCH} != "linux-x86_64" ]]; then
     echo "Configuring epics-base for target ${EPICS_TARGET_ARCH}"
 
     touch ${EPICS_BASE}/configure/CONFIG_SITE.local

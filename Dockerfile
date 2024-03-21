@@ -6,32 +6,25 @@
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools
 
-ARG EPICS_TARGET_ARCH=linux-x86_64
-ARG EPICS_HOST_ARCH=linux-x86_64
 ARG BASE_IMAGE=ubuntu:22.04
-# runtime base image = default BASE_IMAGE above
 ARG RUNTIME_BASE=ubuntu:22.04
 
-# ARGS for shared environment between developer and runtime stages
-ARG EPICS_ROOT=/epics
-ARG EPICS_BASE=${EPICS_ROOT}/epics-base
-ARG SUPPORT ${EPICS_ROOT}/support
-ARG IOC ${EPICS_ROOT}/ioc
-
-##### shared environment stage #################################################
+##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
 
+ARG EPICS_TARGET_ARCH=linux-x86_64
+ARG EPICS_HOST_ARCH=linux-x86_64
+
+# environment variables - must be duplicated in the runtime stage
+ENV EPICS_VERSION=R7.0.8
 ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
-ENV EPICS_ROOT=${EPICS_ROOT}
-ENV EPICS_BASE=${EPICS_BASE}
-ENV SUPPORT ${SUPPORT}
-ENV IOC ${IOC}
-
+ENV EPICS_ROOT=/epics
+ENV EPICS_BASE=${EPICS_ROOT}/epics-base
+ENV SUPPORT ${EPICS_ROOT}/support
+ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
-
-ENV EPICS_VERSION=R7.0.8
 
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
@@ -53,9 +46,9 @@ RUN apt-get update -y && apt-get upgrade -y && \
     && busybox --install
 
 # get and build EPICS base
-COPY epics /epics
-RUN bash epics/scripts/get-base.sh && \
-    bash /epics/scripts/patch-epics-base.sh
+COPY epics ${EPICS_ROOT}
+RUN bash ${EPICS_ROOT}/scripts/get-base.sh && \
+    bash ${EPICS_ROOT}/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
 # create a virtual environment to be used by IOCs to install ibek
@@ -70,14 +63,20 @@ RUN bash epics/scripts/move_runtime.sh /assets
 ##### runtime stage ############################################################
 FROM ${RUNTIME_BASE} as runtime
 
+
+ARG EPICS_TARGET_ARCH=linux-x86_64
+ARG EPICS_HOST_ARCH=linux-x86_64
+
+# environment variables - must be duplicated in the developer stage
+ENV EPICS_VERSION=R7.0.8
 ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
-ENV EPICS_ROOT=${EPICS_ROOT}
-ENV EPICS_BASE=${EPICS_BASE}
-ENV SUPPORT ${SUPPORT}
-ENV IOC ${IOC}
-
+ENV EPICS_ROOT=/epics
+ENV EPICS_BASE=${EPICS_ROOT}/epics-base
+ENV SUPPORT ${EPICS_ROOT}/support
+ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
+ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 # add products from build stage
 COPY --from=runtime_prep /assets /
