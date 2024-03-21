@@ -63,7 +63,6 @@ RUN bash epics/scripts/move_runtime.sh /assets
 ##### runtime stage ############################################################
 FROM ${RUNTIME_BASE} as runtime
 
-
 ARG EPICS_TARGET_ARCH=linux-x86_64
 ARG EPICS_HOST_ARCH=linux-x86_64
 
@@ -76,7 +75,7 @@ ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
-ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
+ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}z
 
 # add products from build stage
 COPY --from=runtime_prep /assets /
