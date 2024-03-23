@@ -34,6 +34,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     build-essential \
     busybox \
     git \
+    inotify-tools \
     libreadline-dev \
     python3-minimal \
     python3-pip \
@@ -41,9 +42,9 @@ RUN apt-get update -y && apt-get upgrade -y && \
     re2c \
     rsync \
     ssh-client \
+    telnet \
     vim \
-    && rm -rf /var/lib/apt/lists/* \
-    && busybox --install
+    && rm -rf /var/lib/apt/lists/*
 
 # get and build EPICS base
 COPY epics ${EPICS_ROOT}
@@ -86,6 +87,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     libpython3-stdlib \
     libreadline8 \
     python3-minimal \
+    telnet \
     && rm -rf /var/lib/apt/lists/*
 
 # add products from build stage
