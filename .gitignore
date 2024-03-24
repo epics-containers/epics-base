@@ -3,3 +3,4 @@ repos/
 repos-build/
 *.log
 *.out
+*.code-workspace

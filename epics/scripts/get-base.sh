@@ -3,7 +3,7 @@
 # get the version of epics-base indicated by the environment unless we
 # are building for RTEMS6 which is temporarily in a forked version
 
-if [[ ${TARGET_ARCHITECTURE} == "RTEMS-beatnik" ]] ; then
+if [[ ${EPICS_TARGET_ARCH} == "RTEMS-beatnik" ]] ; then
     git clone https://github.com/kiwichris/epics-base.git \
       --branch rtems-legacy-net-support -q \
       --recursive ${EPICS_BASE}
