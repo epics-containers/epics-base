@@ -14,40 +14,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        epics-target: [RTEMS-beatnik, linux-x86_64, linux-arm]
-        target: [developer, runtime]
+        epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
         include:
-          - epics-target: RTEMS-beatnik
-            epics-host: linux-x86_64
-            image_name: rtems-beatnik
-            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
-            os: ubuntu-latest
-            platform: linux/amd64
+          - os: ubuntu-latest # everyone is on os-latest
 
+          # native linux compile
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
-            image_name: linux
+            name: epics-base
             base_image: ubuntu:22.04
-            os: ubuntu-latest
             platform: linux/amd64
 
-          - epics-target: linux-arm
-            epics-host: linux-arm
-            image_name: linux
+          # cross compile for RTEMS to VME5500 (power pc beatnik)
+          - epics-target: RTEMS-beatnik
+            epics-host: linux-x86_64
+            name: epics-base-rtems-beatnik
+            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1rc2
+            platform: linux/amd64
+
+          # cross compile to arm64
+          - epics-target: linux-aarch64
+            epics-host: linux-x86_64
+            name: epics-base-aarch64
             base_image: ubuntu:22.04
-            os: ubuntu-latest
-            platform: linux/arm64
+            platform: linux/amd64
 
     runs-on: ${{ matrix.os }}
     env:
-      TAG: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-${{  matrix.image_name }}-${{ matrix.target }}:${{ github.ref_name }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
+      TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
 
+    steps:
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v3
         with:
@@ -55,37 +51,44 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build image
         uses: docker/build-push-action@v5
         with:
-          context: .
           platforms: ${{ matrix.platform }}
-          target: ${{ matrix.target }}
+          target: runtime
           build-args: |
-            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_TARGET_ARCH=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
           cache-from: type=gha,scope=${{ matrix.epics-target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
           load: true
 
-      - name: Push image
+      - name: Push developer image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v5
         with:
-          context: .
           platforms: ${{ matrix.platform }}
-          target: ${{ matrix.target }}
+          target: developer
           build-args: |
-            TARGET_ARCHITECTURE=${{ matrix.epics-target }}
+            EPICS_TARGET_ARCH=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
             BASE_IMAGE=${{ matrix.base_image }}
-          tags: ${{ env.TAG }}
+          tags: ${{ env.TAG }}-developer:${{ github.ref_name }}
+          push: true
+
+      - name: Push runtime image
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        uses: docker/build-push-action@v5
+        with:
+          platforms: ${{ matrix.platform }}
+          target: runtime
+          build-args: |
+            EPICS_TARGET_ARCH=${{ matrix.epics-target }}
+            EPICS_HOST_ARCH=${{ matrix.epics-host }}
+            BASE_IMAGE=${{ matrix.base_image }}
+          tags: ${{ env.TAG }}-runtime:${{ github.ref_name }}
           push: true
