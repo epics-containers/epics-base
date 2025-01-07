@@ -33,11 +33,14 @@ RUN apt-get update -y && apt-get upgrade -y && \
     curl \
     build-essential \
     busybox \
+    gdb \
     git \
     inotify-tools \
+    libevent-dev \
     libreadline-dev \
     python3-minimal \
     python3-pip \
+    python3-ptrace \
     python3-venv \
     re2c \
     rsync \
@@ -51,6 +54,9 @@ COPY epics ${EPICS_ROOT}
 RUN bash ${EPICS_ROOT}/scripts/get-base.sh && \
     bash ${EPICS_ROOT}/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
+
+# build pvxs
+RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
 
 # create a virtual environment to be used by IOCs to install ibek
 RUN python3 -m venv /venv
@@ -84,6 +90,7 @@ COPY --from=runtime_prep /assets /
 # add runtime system dependencies
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
+    libevent-dev \
     libpython3-stdlib \
     libreadline8 \
     python3-minimal \

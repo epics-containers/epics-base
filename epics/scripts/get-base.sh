@@ -5,10 +5,8 @@
 
 if [[ ${EPICS_TARGET_ARCH} == "RTEMS-beatnik" ]] ; then
     git clone https://github.com/kiwichris/epics-base.git \
-      --branch rtems-legacy-net-support -q \
-      --recursive ${EPICS_BASE}
+      --branch rtems-legacy-net-support -q  ${EPICS_BASE}
 else
     git clone https://github.com/epics-base/epics-base \
-      --branch ${EPICS_VERSION} -q \
-      --recursive ${EPICS_BASE}
+      --branch ${EPICS_VERSION} -q  ${EPICS_BASE}
 fi

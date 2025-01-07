@@ -8,7 +8,17 @@ DEST=${1}
 
 cd /
 
-for i in epics/epics-base/bin epics/epics-base/lib venv epics/support; do
+paths="
+epics/epics-base/bin
+epics/epics-base/lib
+venv
+epics/support/configure
+epics/support/pvxs/db
+epics/support/pvxs/bin
+epics/support/pvxs/lib
+"
+
+for i in ${paths} ; do
     # strip any binaries
     strip $(find ${i}) 2>/dev/null
 
