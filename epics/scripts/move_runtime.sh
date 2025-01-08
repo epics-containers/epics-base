@@ -19,6 +19,11 @@ epics/support/pvxs/lib
 "
 
 for i in ${paths} ; do
+    # skip if the path does not exist
+    if [ ! -d ${i} ]; then
+        continue
+    fi
+
     # strip any binaries
     strip $(find ${i}) 2>/dev/null
 
