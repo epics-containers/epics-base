@@ -5,6 +5,7 @@
 
 VERSION=1.3.2
 NAME=pvxs
+THIS_DIR=$(dirname $(readlink -f $0))
 
 # Can't build for RTEMS because we need libevent-dev - how do we get that?
 # Can't build for aarch64 - I think the Makefile assumes that the perl
@@ -23,6 +24,10 @@ if [[ $EPICS_TARGET_ARCH == "linux-x86_64" ]]; then
 
     # add in the global RELEASE file as
     ln -s ${SUPPORT}/configure/RELEASE ./configure/RELEASE.local
+
+    echo pvxsIoc.dbd >> ${THIS_DIR}/../support/configure/dbd_list
+    echo pvxs >> ${THIS_DIR}/../support/configure/lib_list
+    echo pvxsIoc >> ${THIS_DIR}/../support/configure/lib_list
 
     make -j $(nproc)
     make clean
