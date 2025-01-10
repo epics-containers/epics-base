@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"command": "ibek",
+			"args": [
+				"runtime",
+				"generate",
+				"/epics/ioc/config/ioc.yaml",
+				"/epics/ibek-defs/*"
+			],
+			"label": "Regenerate st.cmd and ioc.db from ioc.yaml",
+			"type": "shell"
+		},
+		{
+			"type": "shell",
+			"label": "build",
+			"command": "make",
+			"args": [
+				"build"
+			],
+			"presentation": {
+				"reveal": "silent"
+			}
+		}
+	]
+}
