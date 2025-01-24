@@ -1,0 +1,72 @@
+// Generic IOC in-cluster debugging launcher
+{
+    "version": "2.0",
+    "inputs": [
+        {
+            "id": "coreFileName",
+            "type": "promptString",
+            "description": "Enter the core file name"
+        }
+    ],
+    "configurations": [
+        {
+            "name": "(gdb) Attach to IOC",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/epics/ioc/bin/linux-x86_64/ioc",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "Open a core dump(c/c++)",
+            "program": "/epics/ioc/bin/linux-x86_64/ioc",
+            "coreDumpPath": "${input:coreFileName}",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb"
+        },
+        {
+            "name": "Launch IOC in debugger",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/epics/ioc/bin/linux-x86_64/ioc",
+            "args": [
+                "/epics/runtime/st.cmd"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/epics/ioc",
+            "environment": [
+                {
+                    "name": "RUNTIME_DIR",
+                    "value": "/epics/runtime"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

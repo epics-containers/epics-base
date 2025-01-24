@@ -4,8 +4,9 @@ THIS_DIR=$(dirname $(readlink -f $0))
 
 # comment out the test directories from the Makefile
 sed -i -E 's/(^[^#].*+= test.*$)/# \1/' \
-    /epics/epics-base/Makefile \
-    /epics/epics-base/modules/*/Makefile
+    /epics/epics-base/Makefile
+    # No longer adding submodules to the build
+    # /epics/epics-base/modules/*/Makefile
 
 if [[ ${EPICS_TARGET_ARCH} == "RTEMS-beatnik" ]]; then
     echo "Configuring epics-base to build RTEMS beatnik"
