@@ -16,7 +16,7 @@ TAG=${TAG:-ec_test}
 if [ "$T_A" = "RTEMS-beatnik" ]; then
     base="ghcr.io/epics-containers/rtems-beatnik-runtime"
 else
-    base="ubuntu:22.04"
+    base="ubuntu:24.04"
 fi
 
 cd $(dirname ${0})

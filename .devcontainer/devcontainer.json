@@ -7,7 +7,7 @@
         "args": {
             // Native target development settings ==============================
             "EPICS_TARGET_ARCH": "linux-x86_64",
-            "BASE_IMAGE": "ubuntu:22.04"
+            "BASE_IMAGE": "ubuntu:24.04"
             // Local cross compilation settings ================================
             // "EPICS_TARGET_ARCH": "RTEMS-beatnik",
             // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime"

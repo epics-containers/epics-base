@@ -6,8 +6,8 @@
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools
 
-ARG BASE_IMAGE=ubuntu:22.04
-ARG RUNTIME_BASE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:24.04
+ARG RUNTIME_BASE=ubuntu:24.04
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
