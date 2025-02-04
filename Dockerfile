@@ -6,8 +6,8 @@
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools
 
-ARG BASE_IMAGE=ubuntu:24.04
-ARG RUNTIME_BASE=ubuntu:24.04
+ARG BASE_IMAGE=ubuntu:22.04
+ARG RUNTIME_BASE=ubuntu:22.04
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
@@ -77,7 +77,7 @@ ARG EPICS_TARGET_ARCH=linux-x86_64
 ARG EPICS_HOST_ARCH=linux-x86_64
 
 # environment variables - IMPORTANT: must be duplicated in the developer stage
-ENV EPICS_VERSION=R7.0
+ENV EPICS_VERSION=7.0
 ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
@@ -85,7 +85,7 @@ ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
-ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}z
+ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 # add products from build stage
 COPY --from=runtime_prep /assets /
