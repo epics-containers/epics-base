@@ -29,7 +29,8 @@ jobs:
           - epics-target: RTEMS-beatnik
             epics-host: linux-x86_64
             name: epics-base-rtems-beatnik
-            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec3
+            # NOTE: when changing this - also change it in '/build'
+            base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec4
             platform: linux/amd64
 
           # cross compile to arm64

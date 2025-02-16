@@ -61,9 +61,8 @@ RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
 ENV PATH=${EPICS_ROOT}/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 
-# create a virtual environment to be used by IOCs to install ibek
-# except when based on the RTEMS BSP image which supplies /venv
-RUN ! test -d /venv && python3 -m venv /venv
+# create a venv for IOCs to install ibek
+RUN python3 -m venv /venv
 
 ##### runtime preparation stage ################################################
 FROM developer AS runtime_prep
