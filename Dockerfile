@@ -4,10 +4,10 @@
 #   EPICS_TARGET_ARCH: the epics cross compile target platform
 #     note that linux-x86_64 is shortened to linux and is the default
 #   EPICS_HOST_ARCH: the epics host architecture name
-#   BASE_IMAGE: can be used to bring in cross compilation tools
+#   BASE_IMAGE: can be used to bring in cross compilation tools e.g RTEMS BSP
 
-ARG BASE_IMAGE=ubuntu:22.04
-ARG RUNTIME_BASE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:24.04
+ARG RUNTIME_BASE=ubuntu:24.04
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
