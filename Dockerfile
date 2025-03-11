@@ -6,8 +6,8 @@
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools
 
-ARG BASE_IMAGE=ubuntu:22.04
-ARG RUNTIME_BASE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:24.04
+ARG RUNTIME_BASE=ubuntu:24.04
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
@@ -16,7 +16,7 @@ ARG EPICS_TARGET_ARCH=linux-x86_64
 ARG EPICS_HOST_ARCH=linux-x86_64
 
 # environment variables - must be duplicated in the runtime stage
-ENV EPICS_VERSION=R7.0.8
+ENV EPICS_VERSION=R7.0.9
 ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
@@ -68,7 +68,7 @@ ARG EPICS_TARGET_ARCH=linux-x86_64
 ARG EPICS_HOST_ARCH=linux-x86_64
 
 # environment variables - must be duplicated in the developer stage
-ENV EPICS_VERSION=R7.0.8
+ENV EPICS_VERSION=R7.0.9
 ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
