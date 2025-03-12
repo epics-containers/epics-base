@@ -22,7 +22,7 @@ jobs:
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
             name: epics-base
-            base_image: ubuntu:22.04
+            base_image: ubuntu:24.04
             platform: linux/amd64
 
           # cross compile for RTEMS to VME5500 (power pc beatnik)
