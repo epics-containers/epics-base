@@ -31,6 +31,8 @@ ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 # install build tools and utilities
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
+    ansible-core \
+    ansible-lint \
     ca-certificates \
     curl \
     build-essential \
