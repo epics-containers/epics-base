@@ -6,8 +6,10 @@
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools
 
-ARG BASE_IMAGE=ubuntu:24.04
-ARG RUNTIME_BASE=ubuntu:24.04
+# ffmpegServer packages from 24.04 are not compatibible with ffmpeg plugin.
+# For now, areadetector IOCs will be based on 22.04.
+ARG BASE_IMAGE=ubuntu:22.04
+ARG RUNTIME_BASE=ubuntu:22.04
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
@@ -27,6 +29,7 @@ ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 # install build tools and utilities
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     ansible-core \
