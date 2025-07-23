@@ -29,23 +29,15 @@ ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 # install build tools and utilities
-RUN apt-get update -y && apt-get upgrade -y && \
+RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     ansible-core \
     ansible-lint \
-    ca-certificates \
-    curl \
-    build-essential \
     busybox \
     gdb \
-    git \
     inotify-tools \
     libevent-dev \
     libreadline-dev \
-    python3-minimal \
-    python3-pip \
-    python3-ptrace \
-    python3-venv \
     re2c \
     rsync \
     ssh-client \
@@ -65,7 +57,7 @@ RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
 ENV PATH=${EPICS_ROOT}/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 
 # create a venv for IOCs to install ibek
-RUN python3 -m venv /venv
+RUN uv venv /venv
 
 ##### runtime preparation stage ################################################
 FROM developer AS runtime_prep
@@ -94,12 +86,10 @@ ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 COPY --from=runtime_prep /assets /
 
 # add runtime system dependencies
-RUN apt-get update -y && apt-get upgrade -y && \
+RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     libevent-dev \
-    libpython3-stdlib \
     libreadline8 \
-    python3-minimal \
     telnet \
     && rm -rf /var/lib/apt/lists/*
 
