@@ -57,7 +57,7 @@ RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
 ENV PATH=${EPICS_ROOT}/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 
 # create a venv for IOCs to install ibek
-RUN uv venv /venv
+RUN uv venv --managed-python /venv
 
 ##### runtime preparation stage ################################################
 FROM developer AS runtime_prep
