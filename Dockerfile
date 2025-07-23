@@ -27,6 +27,7 @@ ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
+ENV UV_PYTHON_INSTALL_DIR=/python
 
 # install build tools and utilities
 RUN apt-get update -y && \
