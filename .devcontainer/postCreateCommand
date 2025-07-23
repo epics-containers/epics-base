@@ -8,7 +8,7 @@
 # the following steps are then required
 ################################################################################
 
-if [[ $USER != "root" ]] ; then
+if [[ $(id -u) != "0" ]] ; then
     # make sure the non-root user can build iocs and (mounted in) support modules
     sudo chown -R ${USER}:${USER} /epics/ibek-defs /epics/pvi-defs /epics/support/configure /venv
     sudo chown -h ${USER}:${USER} /epics /epics/ioc /epics/support

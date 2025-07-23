@@ -7,22 +7,19 @@
         "args": {
             // Native target development settings ==============================
             "EPICS_TARGET_ARCH": "linux-x86_64",
-            "BASE_IMAGE": "ubuntu:24.04",
+            "BASE_IMAGE": "ubuntu:24.04"
             // Local cross compilation settings ================================
             // "EPICS_TARGET_ARCH": "RTEMS-beatnik",
             // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime"
-            //
-            // We put venv on a different volume to cache so have to copy
-            "UV_LINK_MODE": "copy",
-            // Do the equivalent of "activate" the venv so we don't have to "uv run" everything
-            "PATH": "/workspaces/${localWorkspaceFolderBasename}/.venv/bin:${localEnv:PATH}"
         }
     },
     "remoteEnv": {
         // allows X11 apps to run inside the container
         "DISPLAY": "${localEnv:DISPLAY}",
         // provides a name for epics-containers to use in bash prompt etc.
-        "EC_PROJECT": "${localWorkspaceFolderBasename}"
+        "EC_PROJECT": "${localWorkspaceFolderBasename}",
+        // We put venv on a different volume to cache so have to copy
+        "UV_LINK_MODE": "copy"
     },
     // IMPORTANT for this devcontainer to work with docker EC_REMOTE_USER must be
     // set to vscode. You will run as vscode with full sudo rights.
@@ -60,6 +57,8 @@
             },
         }
     },
+    // Create the config folder for the bash-config feature
+    "initializeCommand": "mkdir -p ${localEnv:HOME}/.config/terminal-config",
     // Populate the user's terminal config folder with default config if it is blank
     "onCreateCommand": "/root/terminal-config/ensure-user-terminal-config.sh",
     // One time global setup commands inside the container

@@ -55,7 +55,7 @@ RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
 # build pvxs
 RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
-ENV PATH=${EPICS_ROOT}/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
+ENV PATH=${EPICS_ROOT}/support/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 
 # create a venv for IOCs to install ibek
 RUN uv venv --managed-python /venv
@@ -81,6 +81,7 @@ ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
+ENV PATH=${EPICS_ROOT}/support/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 # add products from build stage
