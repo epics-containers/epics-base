@@ -7,8 +7,8 @@
 #   BASE_IMAGE: can be used to bring in cross compilation tools e.g RTEMS BSP
 
 # warning - also change .github/workflows/build.yml when changing the base image
-ARG BASE_IMAGE=ubuntu:24.04
-ARG RUNTIME_BASE=ubuntu:24.04
+ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
+ARG RUNTIME_BASE=ubuntu:noble
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
