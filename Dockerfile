@@ -34,15 +34,11 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     ansible-core \
     ansible-lint \
-    busybox \
-    gdb \
     inotify-tools \
     libevent-dev \
     libreadline-dev \
     re2c \
     rsync \
-    telnet \
-    vim \
     && rm -rf /var/lib/apt/lists/*
 
 # get and build EPICS base
