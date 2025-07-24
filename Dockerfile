@@ -41,7 +41,6 @@ RUN apt-get update -y && \
     libreadline-dev \
     re2c \
     rsync \
-    ssh-client \
     telnet \
     vim \
     && rm -rf /var/lib/apt/lists/*
