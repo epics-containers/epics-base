@@ -89,11 +89,6 @@
             "source": "${localEnv:HOME}/.cache/uv",
             "target": "/root/.cache/uv",
             "type": "bind"
-        },
-        // Use a volume mount for the uv venv so it is local to the container
-        {
-            "target": "/workspaces/${localWorkspaceFolderBasename}/.venv",
-            "type": "volume"
         }
     ]
 }
