@@ -7,8 +7,8 @@
 #   BASE_IMAGE: can be used to bring in cross compilation tools e.g RTEMS BSP
 
 # warning - also change .github/workflows/build.yml when changing the base image
-ARG BASE_IMAGE=ubuntu:24.04
-ARG RUNTIME_BASE=ubuntu:24.04
+ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
+ARG RUNTIME_BASE=ubuntu:noble
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
@@ -27,30 +27,18 @@ ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
+ENV UV_PYTHON_INSTALL_DIR=/python
 
 # install build tools and utilities
-RUN apt-get update -y && apt-get upgrade -y && \
+RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     ansible-core \
     ansible-lint \
-    ca-certificates \
-    curl \
-    build-essential \
-    busybox \
-    gdb \
-    git \
     inotify-tools \
     libevent-dev \
     libreadline-dev \
-    python3-minimal \
-    python3-pip \
-    python3-ptrace \
-    python3-venv \
     re2c \
     rsync \
-    ssh-client \
-    telnet \
-    vim \
     && rm -rf /var/lib/apt/lists/*
 
 # get and build EPICS base
@@ -62,10 +50,10 @@ RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
 # build pvxs
 RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
-ENV PATH=${EPICS_ROOT}/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
+ENV PATH=${EPICS_ROOT}/support/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 
 # create a venv for IOCs to install ibek
-RUN python3 -m venv /venv
+RUN uv venv --managed-python /venv
 
 ##### runtime preparation stage ################################################
 FROM developer AS runtime_prep
@@ -88,18 +76,17 @@ ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
 ENV IOC ${EPICS_ROOT}/ioc
 ENV PATH=/venv/bin:${EPICS_BASE}/bin/${EPICS_HOST_ARCH}:${PATH}
+ENV PATH=${EPICS_ROOT}/support/pvxs/bin/${EPICS_HOST_ARCH}:${PATH}
 ENV LD_LIBRARY_PATH=${EPICS_BASE}/lib/${EPICS_HOST_ARCH}
 
 # add products from build stage
 COPY --from=runtime_prep /assets /
 
 # add runtime system dependencies
-RUN apt-get update -y && apt-get upgrade -y && \
+RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     libevent-dev \
-    libpython3-stdlib \
     libreadline8 \
-    python3-minimal \
     telnet \
     && rm -rf /var/lib/apt/lists/*
 

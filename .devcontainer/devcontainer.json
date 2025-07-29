@@ -17,14 +17,9 @@
         // allows X11 apps to run inside the container
         "DISPLAY": "${localEnv:DISPLAY}",
         // provides a name for epics-containers to use in bash prompt etc.
-        "EC_PROJECT": "${localWorkspaceFolderBasename}"
-    },
-    "features": {
-        // add quality of life features for developers including git config integration
-        "ghcr.io/devcontainers/features/common-utils:2": {
-            // don't upgrade to make this similar to the runtime container
-            "upgradePackages": false
-        }
+        "EC_PROJECT": "${localWorkspaceFolderBasename}",
+        // We put venv on a different volume to cache so have to copy
+        "UV_LINK_MODE": "copy"
     },
     // IMPORTANT for this devcontainer to work with docker EC_REMOTE_USER must be
     // set to vscode. You will run as vscode with full sudo rights.
@@ -35,17 +30,37 @@
         "vscode": {
             // Add the IDs of extensions you want installed when the container is created.
             "extensions": [
-                "ms-python.vscode-pylance",
+                "epicsdeb.vscode-epics",
+                //
+                "ms-python.python",
+                "github.vscode-github-actions",
                 "tamasfe.even-better-toml",
                 "redhat.vscode-yaml",
                 "ryanluker.vscode-coverage-gutters",
-                "epicsdeb.vscode-epics",
-                "charliermarsh.ruff"
-            ]
+                "charliermarsh.ruff",
+                "ms-azuretools.vscode-docker"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/workspaces/${localWorkspaceFolderBasename}/.venv/bin/python",
+                "python.terminal.activateEnvInCurrentTerminal": false,
+                "python.terminal.activateEnvironment": false,
+                "python.testing.unittestEnabled": false,
+                "python.testing.pytestEnabled": true,
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": "explicit"
+                },
+                // "remote.autoForwardPorts": false,
+                "[python]": {
+                    "editor.defaultFormatter": "charliermarsh.ruff"
+                }
+            },
         }
     },
-    // You can place any outside of the container before-launch commands here
-    "initializeCommand": "bash .devcontainer/initializeCommand ${devcontainerId}",
+    // Create the config folder for the bash-config feature
+    "initializeCommand": "mkdir -p ${localEnv:HOME}/.config/terminal-config",
+    // Populate the user's terminal config folder with default config if it is blank
+    "onCreateCommand": "/root/terminal-config/ensure-user-terminal-config.sh",
     // One time global setup commands inside the container
     "postCreateCommand": "bash .devcontainer/postCreateCommand ${devcontainerId}",
     "runArgs": [
@@ -61,6 +76,19 @@
         // we also mount the project folder into a know location in the container
         // this is where the ibek-support and ioc folders reside in the container build
         // in this way the devcontainer and runtime look very similar
-        "source=${localWorkspaceFolder},target=/epics/generic-source,type=bind"
+        "source=${localWorkspaceFolder},target=/epics/generic-source,type=bind",
+        //
+        // Mount in the user terminal config folder so it can be edited
+        {
+            "source": "${localEnv:HOME}/.config/terminal-config",
+            "target": "/user-terminal-config",
+            "type": "bind"
+        },
+        // Keep a persistent cross container cache for uv
+        {
+            "source": "${localEnv:HOME}/.cache/uv",
+            "target": "/root/.cache/uv",
+            "type": "bind"
+        }
     ]
 }
