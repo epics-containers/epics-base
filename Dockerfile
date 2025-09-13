@@ -85,10 +85,13 @@ COPY --from=runtime_prep /assets /
 # add runtime system dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
+    busybox \
     libevent-dev \
     libreadline8 \
-    telnet \
     && rm -rf /var/lib/apt/lists/*
+
+# Use busybox to provide network diagnostics etc.
+RUN busybox --install -s
 
 # add products from build stage
 COPY --from=runtime_prep /assets /
