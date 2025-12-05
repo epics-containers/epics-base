@@ -14,10 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        epics-target: [linux-x86_64]
+        epics-target: [linux-x86_64, linux-aarch64]
         #epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
         include:
-          - os: ubuntu-latest # everyone is on os-latest
 
           # native linux compile
           - epics-target: linux-x86_64
@@ -25,6 +24,7 @@ jobs:
             name: epics-base
             base_image: ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
             platform: linux/amd64
+            os: ubuntu-latest
 
           # # cross compile for RTEMS to VME5500 (power pc beatnik)
           # - epics-target: RTEMS-beatnik
@@ -34,12 +34,13 @@ jobs:
           #   base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec4
           #   platform: linux/amd64
 
-          # # cross compile to arm64
-          # - epics-target: linux-aarch64
-          #   epics-host: linux-x86_64
-          #   name: epics-base-aarch64
-          #   base_image: ubuntu:24.04
-          #   platform: linux/amd64
+          # cross compile to arm64
+          - epics-target: linux-aarch64
+            epics-host: linux-aarch64
+            name: epics-base-aarch64
+            base_image: ubuntu:24.04
+            platform: linux/arm64
+            os: ubuntu-24.04-arm
 
     runs-on: ${{ matrix.os }}
     env:
