@@ -3,7 +3,7 @@
 ##### install script for pvxs support module #############################
 ##########################################################################
 
-VERSION=1.3.2
+VERSION=1.5.0
 NAME=pvxs
 THIS_DIR=$(dirname $(readlink -f $0))
 
