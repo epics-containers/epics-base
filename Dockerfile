@@ -36,6 +36,7 @@ RUN apt-get update -y && \
     inotify-tools \
     libevent-dev \
     libreadline-dev \
+    libcrypt-dev \
     re2c \
     rsync \
     && rm -rf /var/lib/apt/lists/*
@@ -45,7 +46,7 @@ COPY epics ${EPICS_ROOT}
 RUN git clone https://github.com/epics-base/epics-base \
         --branch ${EPICS_VERSION} -q  ${EPICS_BASE} && \
     bash ${EPICS_ROOT}/scripts/patch-epics-base.sh
-RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
+RUN make -C ${EPICS_BASE} -j $(nproc); ls -l ${EPICS_BASE}/lib/linux-x86_64/libdbRecStd.a
 
 # build pvxs
 RUN bash ${EPICS_ROOT}/scripts/make_pvxs.sh
