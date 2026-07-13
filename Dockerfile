@@ -44,7 +44,7 @@ RUN apt-get update -y && \
 # get and build EPICS base
 COPY epics ${EPICS_ROOT}
 RUN git clone https://github.com/epics-base/epics-base \
-    --branch ${EPICS_VERSION} -q  ${EPICS_BASE} && \
+        --branch ${EPICS_VERSION} -q  ${EPICS_BASE} && \
     bash ${EPICS_ROOT}/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
