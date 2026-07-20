@@ -36,7 +36,6 @@ RUN apt-get update -y && \
     inotify-tools \
     libevent-dev \
     libreadline-dev \
-    libcrypt-dev \
     re2c \
     rsync \
     && rm -rf /var/lib/apt/lists/*
