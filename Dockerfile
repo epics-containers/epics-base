@@ -7,8 +7,8 @@
 #   BASE_IMAGE: can be used to bring in cross compilation tools e.g RTEMS BSP
 
 # warning - also change .github/workflows/build.yml when changing the base image
-ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute
-ARG RUNTIME_BASE=ubuntu:resolute
+ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
+ARG RUNTIME_BASE=ubuntu:noble
 
 ##### developer stage ##########################################################
 FROM ${BASE_IMAGE} AS developer
@@ -36,7 +36,6 @@ RUN apt-get update -y && \
     inotify-tools \
     libevent-dev \
     libreadline-dev \
-    libcrypt-dev \
     re2c \
     rsync \
     && rm -rf /var/lib/apt/lists/*
