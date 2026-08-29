@@ -57,7 +57,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           platforms: ${{ matrix.platform }}
           target: runtime
@@ -71,7 +71,7 @@ jobs:
 
       - name: Push developer image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           platforms: ${{ matrix.platform }}
           target: developer
@@ -84,7 +84,7 @@ jobs:
 
       - name: Push runtime image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           platforms: ${{ matrix.platform }}
           target: runtime
