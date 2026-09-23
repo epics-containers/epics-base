@@ -6,8 +6,9 @@
         "target": "developer",
         "args": {
             // Native target development settings ==============================
-            "EPICS_TARGET_ARCH": "linux-x86_64",
-            "BASE_IMAGE": "ghcr.io/diamondlightsource/ubuntu-devcontainer:noble"
+            // BASE_IMAGE defaults to the value in the Dockerfile (the single
+            // place where the Ubuntu version is specified)
+            "EPICS_TARGET_ARCH": "linux-x86_64"
             // Local cross compilation settings ================================
             // "EPICS_TARGET_ARCH": "RTEMS-beatnik",
             // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime"

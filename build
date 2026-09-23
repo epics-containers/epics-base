@@ -13,10 +13,12 @@ TARGET=${TARGET:-developer}
 # set TAG to override the default tag
 TAG=${TAG:-ec_test}
 
+# BASE_IMAGE defaults to the ARG in the Dockerfile unless overridden here
 if [ "$T_A" = "RTEMS-beatnik" ]; then
-    base="ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec4"
-else
-    base=${BASE_IMAGE:-ghcr.io/diamondlightsource/ubuntu-devcontainer:noble}
+    BASE_IMAGE="ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec4"
+fi
+if [ -n "$BASE_IMAGE" ]; then
+    base_arg="--build-arg BASE_IMAGE=$BASE_IMAGE"
 fi
 
 cd $(dirname ${0})
@@ -32,6 +34,6 @@ if [ ! -d ibek-support ] ; then git submodule update --init ; fi
 set -x
 $docker build $buildx -t ${TAG} "${@}" $load \
     --build-arg EPICS_TARGET_ARCH=$T_A \
-    --build-arg BASE_IMAGE=$base \
+    $base_arg \
     --target $TARGET .
 
