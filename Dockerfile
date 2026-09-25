@@ -92,6 +92,13 @@ RUN apt-get update -y && \
 # Use busybox to provide network diagnostics etc.
 RUN busybox --install -s
 
+# In-cluster shells (kubectl exec, ArgoCD Terminal) usually run as a uid with
+# no /etc/passwd entry, so the default '\u@\h' prompt shows 'I have no name!'.
+# Use the IOC name (set by the ioc-instance helm chart) instead. PS1 is
+# single-quoted so bash keeps the \$ prompt escape ('#' for root) and expands
+# IOC_NAME when the prompt is shown.
+RUN printf '%s\n' "PS1='\${IOC_NAME:-epics}:\\w\\\$ '" >> /etc/bash.bashrc
+
 # add products from build stage
 COPY --from=runtime_prep /assets /
 
