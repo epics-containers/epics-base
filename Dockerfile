@@ -6,7 +6,9 @@
 #   EPICS_HOST_ARCH: the epics host architecture name
 #   BASE_IMAGE: can be used to bring in cross compilation tools e.g RTEMS BSP
 
-# warning - also change .github/workflows/build.yml when changing the base image
+# This is the single place where the Ubuntu version is specified. The CI
+# workflow, devcontainer.json and build script all use these defaults unless
+# BASE_IMAGE is overridden for cross-compilation (e.g. RTEMS in ./build).
 ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
 ARG RUNTIME_BASE=ubuntu:noble
 

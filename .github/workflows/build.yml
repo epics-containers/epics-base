@@ -23,8 +23,14 @@ jobs:
           - epics-target: linux-x86_64
             epics-host: linux-x86_64
             name: epics-base
-            base_image: ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
+            # base_image is not set: the default BASE_IMAGE ARG in the
+            # Dockerfile is the single source of truth for the Ubuntu version.
             platform: linux/amd64
+
+          # NOTE: cross compile targets need a different base image. To enable
+          # one, uncomment it below AND add 'BASE_IMAGE=${{ matrix.base_image }}'
+          # to the build-args of each build step (only for matrix entries that
+          # set base_image, otherwise an empty BASE_IMAGE overrides the default).
 
           # # cross compile for RTEMS to VME5500 (power pc beatnik)
           # - epics-target: RTEMS-beatnik
@@ -64,7 +70,6 @@ jobs:
           build-args: |
             EPICS_TARGET_ARCH=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
-            BASE_IMAGE=${{ matrix.base_image }}
           cache-from: type=gha,scope=${{ matrix.epics-target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
           load: true
@@ -78,7 +83,6 @@ jobs:
           build-args: |
             EPICS_TARGET_ARCH=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
-            BASE_IMAGE=${{ matrix.base_image }}
           tags: ${{ env.TAG }}-developer:${{ github.ref_name }}
           push: true
 
@@ -91,6 +95,5 @@ jobs:
           build-args: |
             EPICS_TARGET_ARCH=${{ matrix.epics-target }}
             EPICS_HOST_ARCH=${{ matrix.epics-host }}
-            BASE_IMAGE=${{ matrix.base_image }}
           tags: ${{ env.TAG }}-runtime:${{ github.ref_name }}
           push: true
