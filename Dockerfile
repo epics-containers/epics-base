@@ -2,8 +2,10 @@
 
 #  build args
 #   EPICS_TARGET_ARCH: the epics cross compile target platform
-#     note that linux-x86_64 is shortened to linux and is the default
+#     defaults to the native EPICS_HOST_ARCH
 #   EPICS_HOST_ARCH: the epics host architecture name
+#     defaults to linux-x86_64 or linux-aarch64 from the docker build platform
+#     (TARGETARCH), so 'docker buildx build --platform linux/arm64' just works
 #   BASE_IMAGE: can be used to bring in cross compilation tools e.g RTEMS BSP
 
 # This is the single place where the Ubuntu version is specified. The CI
@@ -11,17 +13,29 @@
 # BASE_IMAGE is overridden for cross-compilation (e.g. RTEMS in ./build).
 ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
 ARG RUNTIME_BASE=ubuntu:noble
+# set automatically by buildkit/buildah from the build platform
+ARG TARGETARCH
+
+##### per platform EPICS architecture names ###################################
+# TARGETARCH picks one of these stages, so the EPICS arch names follow the
+# image platform. EPICS_HOST_ARCH and EPICS_TARGET_ARCH are set here.
+FROM ${BASE_IMAGE} AS developer-amd64
+ARG EPICS_HOST_ARCH=linux-x86_64
+ARG EPICS_TARGET_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
+
+FROM ${BASE_IMAGE} AS developer-arm64
+ARG EPICS_HOST_ARCH=linux-aarch64
+ARG EPICS_TARGET_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 
 ##### developer stage ##########################################################
-FROM ${BASE_IMAGE} AS developer
-
-ARG EPICS_TARGET_ARCH=linux-x86_64
-ARG EPICS_HOST_ARCH=linux-x86_64
+FROM developer-${TARGETARCH} AS developer
 
 # environment variables - IMPORTANT: must be duplicated in the runtime stage
 ENV EPICS_VERSION=7.0.10
-ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
-ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
@@ -63,15 +77,22 @@ FROM developer AS runtime_prep
 RUN bash epics/scripts/move_runtime.sh /assets
 
 ##### runtime stage ############################################################
-FROM ${RUNTIME_BASE} as runtime
-
-ARG EPICS_TARGET_ARCH=linux-x86_64
+FROM ${RUNTIME_BASE} AS runtime-amd64
 ARG EPICS_HOST_ARCH=linux-x86_64
+ARG EPICS_TARGET_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
+
+FROM ${RUNTIME_BASE} AS runtime-arm64
+ARG EPICS_HOST_ARCH=linux-aarch64
+ARG EPICS_TARGET_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
+ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
+
+FROM runtime-${TARGETARCH} AS runtime
 
 # environment variables - IMPORTANT: must be duplicated in the developer stage
 ENV EPICS_VERSION=7.0.10
-ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
-ENV EPICS_HOST_ARCH=${EPICS_HOST_ARCH}
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
