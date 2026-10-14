@@ -11,8 +11,8 @@
 # This is the single place where the Ubuntu version is specified. The CI
 # workflow, devcontainer.json and build script all use these defaults unless
 # BASE_IMAGE is overridden for cross-compilation (e.g. RTEMS in ./build).
-ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:noble
-ARG RUNTIME_BASE=ubuntu:noble
+ARG BASE_IMAGE=ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute
+ARG RUNTIME_BASE=ubuntu:resolute
 # set automatically by buildkit/buildah from the build platform
 ARG TARGETARCH
 
@@ -51,6 +51,7 @@ RUN apt-get update -y && \
     ansible-lint \
     inotify-tools \
     libevent-dev \
+    libcrypt-dev \
     libreadline-dev \
     re2c \
     rsync \
@@ -109,7 +110,7 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     busybox \
     libevent-dev \
-    libreadline8 \
+    libreadline8t64 \
     && rm -rf /var/lib/apt/lists/*
 
 # Use busybox to provide network diagnostics etc.
