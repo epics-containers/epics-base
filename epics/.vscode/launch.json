@@ -13,7 +13,7 @@
             "name": "(gdb) Attach to IOC",
             "type": "cppdbg",
             "request": "attach",
-            "program": "/epics/ioc/bin/linux-x86_64/ioc",
+            "program": "/epics/ioc/bin/${env:EPICS_HOST_ARCH}/ioc",
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -32,7 +32,7 @@
             "type": "cppdbg",
             "request": "launch",
             "name": "Open a core dump(c/c++)",
-            "program": "/epics/ioc/bin/linux-x86_64/ioc",
+            "program": "/epics/ioc/bin/${env:EPICS_HOST_ARCH}/ioc",
             "coreDumpPath": "${input:coreFileName}",
             "cwd": "${workspaceFolder}",
             "MIMode": "gdb"
@@ -41,7 +41,7 @@
             "name": "Launch IOC in debugger",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/epics/ioc/bin/linux-x86_64/ioc",
+            "program": "/epics/ioc/bin/${env:EPICS_HOST_ARCH}/ioc",
             "args": [
                 "/epics/runtime/st.cmd"
             ],

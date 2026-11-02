@@ -5,10 +5,8 @@
         "dockerfile": "../Dockerfile",
         "target": "developer",
         "args": {
-            // Native target development settings ==============================
-            // BASE_IMAGE defaults to the value in the Dockerfile (the single
-            // place where the Ubuntu version is specified)
-            "EPICS_TARGET_ARCH": "linux-x86_64"
+            // Native target development: no args needed. BASE_IMAGE and the
+            // EPICS arch names default to the values in the Dockerfile
             // Local cross compilation settings ================================
             // "EPICS_TARGET_ARCH": "RTEMS-beatnik",
             // "BASE_IMAGE": "ghcr.io/epics-containers/rtems-beatnik-runtime"

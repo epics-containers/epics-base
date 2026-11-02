@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+env:
+  # image names, -developer or -runtime is appended to these
+  NAME: ghcr.io/${{ github.repository_owner }}/epics-base
+
 jobs:
   build:
     # pull requests are a duplicate of a branch push if within the same repo.
@@ -14,44 +18,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        epics-target: [linux-x86_64]
-        #epics-target: [RTEMS-beatnik, linux-x86_64, linux-aarch64]
+        # each platform builds natively on its own runner, then the merge job
+        # combines them into a single multi-arch tag. The EPICS arch names
+        # (linux-x86_64, linux-aarch64) come from the platform via TARGETARCH
+        # in the Dockerfile.
         include:
-          - os: ubuntu-latest # everyone is on os-latest
+          - platform: linux/amd64
+            os: ubuntu-latest
+          - platform: linux/arm64
+            os: ubuntu-24.04-arm
 
-          # native linux compile
-          - epics-target: linux-x86_64
-            epics-host: linux-x86_64
-            name: epics-base
-            # base_image is not set: the default BASE_IMAGE ARG in the
-            # Dockerfile is the single source of truth for the Ubuntu version.
-            platform: linux/amd64
-
-          # NOTE: cross compile targets need a different base image. To enable
-          # one, uncomment it below AND add 'BASE_IMAGE=${{ matrix.base_image }}'
-          # to the build-args of each build step (only for matrix entries that
-          # set base_image, otherwise an empty BASE_IMAGE overrides the default).
-
+          # NOTE: cross compile targets need a different base image and a
+          # separate image name, so they cannot share the multi-arch tag. To
+          # build one, pass 'BASE_IMAGE' and 'EPICS_TARGET_ARCH' build-args e.g.
           # # cross compile for RTEMS to VME5500 (power pc beatnik)
-          # - epics-target: RTEMS-beatnik
-          #   epics-host: linux-x86_64
-          #   name: epics-base-rtems-beatnik
-          #   # NOTE: when changing this - also change it in '/build'
-          #   base_image: ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec4
-          #   platform: linux/amd64
-
-          # # cross compile to arm64
-          # - epics-target: linux-aarch64
-          #   epics-host: linux-x86_64
-          #   name: epics-base-aarch64
-          #   base_image: ubuntu:24.04
-          #   platform: linux/amd64
+          #   EPICS_TARGET_ARCH=RTEMS-beatnik
+          #   BASE_IMAGE=ghcr.io/epics-containers/rtems-beatnik-runtime:6.1ec4
 
     runs-on: ${{ matrix.os }}
-    env:
-      TAG: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}
 
     steps:
+      - name: Platform name
+        id: platform
+        run: echo "pair=$(echo ${{ matrix.platform }} | tr / -)" >> $GITHUB_OUTPUT
+
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v4
         with:
@@ -67,33 +57,86 @@ jobs:
         with:
           platforms: ${{ matrix.platform }}
           target: runtime
-          build-args: |
-            EPICS_TARGET_ARCH=${{ matrix.epics-target }}
-            EPICS_HOST_ARCH=${{ matrix.epics-host }}
-          cache-from: type=gha,scope=${{ matrix.epics-target }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.epics-target }}
+          cache-from: type=gha,scope=${{ steps.platform.outputs.pair }}
+          cache-to: type=gha,mode=max,scope=${{ steps.platform.outputs.pair }}
+          tags: ci_test
           load: true
 
-      - name: Push developer image
+      - name: Test image
+        run: |
+          docker run --rm ci_test bash -c \
+            'echo $EPICS_HOST_ARCH; which softIoc caget pvxget'
+
+      - name: Push developer image by digest
+        id: developer
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v7
         with:
           platforms: ${{ matrix.platform }}
           target: developer
-          build-args: |
-            EPICS_TARGET_ARCH=${{ matrix.epics-target }}
-            EPICS_HOST_ARCH=${{ matrix.epics-host }}
-          tags: ${{ env.TAG }}-developer:${{ github.ref_name }}
-          push: true
+          outputs: type=image,name=${{ env.NAME }}-developer,push-by-digest=true,name-canonical=true,push=true
 
-      - name: Push runtime image
+      - name: Push runtime image by digest
+        id: runtime
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v7
         with:
           platforms: ${{ matrix.platform }}
           target: runtime
-          build-args: |
-            EPICS_TARGET_ARCH=${{ matrix.epics-target }}
-            EPICS_HOST_ARCH=${{ matrix.epics-host }}
-          tags: ${{ env.TAG }}-runtime:${{ github.ref_name }}
-          push: true
+          outputs: type=image,name=${{ env.NAME }}-runtime,push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digests
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        run: |
+          mkdir -p /tmp/digests/developer /tmp/digests/runtime
+          touch /tmp/digests/developer/${DEV_DIGEST#sha256:}
+          touch /tmp/digests/runtime/${RT_DIGEST#sha256:}
+        env:
+          DEV_DIGEST: ${{ steps.developer.outputs.digest }}
+          RT_DIGEST: ${{ steps.runtime.outputs.digest }}
+
+      - name: Upload digests
+        if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ steps.platform.outputs.pair }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    # combine the per-platform images into multi-arch tags
+    needs: [build]
+    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        target: [developer, runtime]
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests/${{ matrix.target }}
+        run: |
+          image=${{ env.NAME }}-${{ matrix.target }}
+          docker buildx imagetools create -t ${image}:${{ github.ref_name }} \
+            $(printf "${image}@sha256:%s " *)
+          docker buildx imagetools inspect ${image}:${{ github.ref_name }}

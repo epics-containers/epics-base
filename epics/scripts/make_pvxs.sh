@@ -8,9 +8,9 @@ NAME=pvxs
 THIS_DIR=$(dirname $(readlink -f $0))
 
 # Can't build for RTEMS because we need libevent-dev - how do we get that?
-# Can't build for aarch64 - I think the Makefile assumes that the perl
-# scripts exist in linux-x86_64 folders
-if [[ $EPICS_TARGET_ARCH == "linux-x86_64" ]]; then
+# Only native builds are supported: cross builds assume the perl scripts
+# exist in linux-x86_64 folders
+if [[ $EPICS_TARGET_ARCH == "$EPICS_HOST_ARCH" ]]; then
     # log output and abort on failure
     set -xe
 
