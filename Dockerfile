@@ -35,7 +35,7 @@ ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 FROM developer-${TARGETARCH} AS developer
 
 # environment variables - IMPORTANT: must be duplicated in the runtime stage
-ENV EPICS_VERSION=7.0.10
+ENV EPICS_VERSION=7.0.11
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
@@ -57,10 +57,10 @@ RUN apt-get update -y && \
     rsync \
     && rm -rf /var/lib/apt/lists/*
 
-# get and build EPICS base
+# get and build EPICS base: upstream release tags are R<version>
 COPY epics ${EPICS_ROOT}
 RUN git clone https://github.com/epics-base/epics-base \
-        --branch ${EPICS_VERSION} -q  ${EPICS_BASE} && \
+        --branch R${EPICS_VERSION} -q  ${EPICS_BASE} && \
     bash ${EPICS_ROOT}/scripts/patch-epics-base.sh
 RUN make -C ${EPICS_BASE} -j $(nproc); make -C ${EPICS_BASE} clean
 
@@ -93,7 +93,7 @@ ENV EPICS_TARGET_ARCH=${EPICS_TARGET_ARCH}
 FROM runtime-${TARGETARCH} AS runtime
 
 # environment variables - IMPORTANT: must be duplicated in the developer stage
-ENV EPICS_VERSION=7.0.10
+ENV EPICS_VERSION=7.0.11
 ENV EPICS_ROOT=/epics
 ENV EPICS_BASE=${EPICS_ROOT}/epics-base
 ENV SUPPORT ${EPICS_ROOT}/support
